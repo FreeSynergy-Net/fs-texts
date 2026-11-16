@@ -1,5 +1,12 @@
-schema = 1
+schema = 2
 purpose = "website"
+
+[site]
+id = "landing"
+name = "Example Landing"
+path_prefix = "/"
+languages = ["de", "en"]
+default_language = "de"
 
 [names]
 primary = "example.test"

@@ -168,6 +168,26 @@ pub(crate) fn csp(
         }
         areas.sort_by(|a, b| a.path.cmp(&b.path));
     }
+    // a static site (no folder runs script) is checked by fs-release page by page: the policies
+    // must be as strict as the exporter's own
+    if mode == CspMode::Static && areas.iter().all(|a| a.mode == CspMode::Static) {
+        let all = c
+            .policy
+            .iter()
+            .map(|p| ("csp.policy".to_string(), p))
+            .chain(areas.iter().filter_map(|a| {
+                a.policy
+                    .as_ref()
+                    .map(|p| (format!("area {}", a.path.as_url()), p))
+            }));
+        for (what, p) in all {
+            if let Some(why) = crate::static_policy::bad(p) {
+                return Err(ConfigError::CspMode(format!(
+                    "{what}: {why}; a static site needs the strict form, or csp.mode = \"passthrough\""
+                )));
+            }
+        }
+    }
     Ok((mode, c.policy, areas))
 }
 

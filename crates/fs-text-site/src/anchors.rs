@@ -34,7 +34,11 @@ pub(crate) fn check_anchors(
         .map(|r| {
             (
                 page_url(&index.prefix, &r.entry.lang, &r.entry.path),
-                ids(&r.html.body),
+                // the ids of the page frame are anchors of every page
+                ids(&r.html.body)
+                    .into_iter()
+                    .chain([fs_text_html::FRAME_MAIN_ID])
+                    .collect(),
             )
         })
         .collect();

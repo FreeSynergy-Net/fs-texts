@@ -44,9 +44,19 @@ impl Writer<'_> {
                 Kind::Generated,
             )?;
         }
+        // the contents page of every language that has pages (its address differs by language)
+        let contents: Vec<(Lang, Vec<String>)> = cfg
+            .languages
+            .iter()
+            .filter(|l| self.rendered.iter().any(|r| &r.entry.lang == *l))
+            .map(|l| {
+                let slug = SiteWords::for_lang(l.as_str()).contents_slug;
+                (l.clone(), vec![slug.to_string()])
+            })
+            .collect();
         self.out.put(
             "sitemap.xml",
-            gen::sitemap(cfg, &self.by_path).as_bytes(),
+            gen::sitemap(cfg, &self.by_path, &contents).as_bytes(),
             MediaType::Xml.mime(),
             Kind::Generated,
         )?;
@@ -60,7 +70,7 @@ impl Writer<'_> {
         }
         self.out.put(
             "site.toml",
-            cfg.to_schema1().as_bytes(),
+            cfg.to_package_toml().as_bytes(),
             "text/x-toml",
             Kind::Generated,
         )

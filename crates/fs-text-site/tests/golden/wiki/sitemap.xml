@@ -44,4 +44,16 @@
 <xhtml:link rel="alternate" hreflang="en" href="https://example.test/wiki/en/guide/only-en/"/>
 <xhtml:link rel="alternate" hreflang="x-default" href="https://example.test/wiki/"/>
 </url>
+<url>
+<loc>https://example.test/wiki/de/inhalt/</loc>
+<xhtml:link rel="alternate" hreflang="de" href="https://example.test/wiki/de/inhalt/"/>
+<xhtml:link rel="alternate" hreflang="en" href="https://example.test/wiki/en/contents/"/>
+<xhtml:link rel="alternate" hreflang="x-default" href="https://example.test/wiki/"/>
+</url>
+<url>
+<loc>https://example.test/wiki/en/contents/</loc>
+<xhtml:link rel="alternate" hreflang="de" href="https://example.test/wiki/de/inhalt/"/>
+<xhtml:link rel="alternate" hreflang="en" href="https://example.test/wiki/en/contents/"/>
+<xhtml:link rel="alternate" hreflang="x-default" href="https://example.test/wiki/"/>
+</url>
 </urlset>

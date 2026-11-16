@@ -98,18 +98,18 @@
       "sha256": "f51a8e141eed65dc695fb8824827cd150dcc08a7272aa7c6cbc608995b1b4f96"
     },
     {
-      "bytes": 189,
+      "bytes": 304,
       "kind": "generated",
       "media": "text/x-toml",
       "path": "site.toml",
-      "sha256": "1bdf60738752f5f5a05cae52eafb11caef4158af34fca89851ac8b4927d1d0c4"
+      "sha256": "e5805111160f8227f37f957528224d9d4aa2facdeb408f32221556ccf2d68c0a"
     },
     {
-      "bytes": 932,
+      "bytes": 1542,
       "kind": "generated",
       "media": "text/xml",
       "path": "sitemap.xml",
-      "sha256": "317a148f8191c4ea9455c7e82d25eff0c420647b3db557688cebfd70a28db7b9"
+      "sha256": "b5f024be0ac1aee0ac6f791b993fc500caf5a414145743e955fc0fe4ed9cc099"
     }
   ],
   "host": "example.test",

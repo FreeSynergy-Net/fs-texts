@@ -45,14 +45,20 @@ pub(crate) fn walk(base: &Path, rel: &str, depth: usize, w: &mut Walk) {
         }
     };
     let mut names: Vec<String> = Vec::new();
-    for e in rd.flatten() {
-        match e.file_name().into_string() {
-            Ok(n) => names.push(n),
-            Err(n) => w.problems.push(format!(
-                "{}: name is not UTF-8: {}",
-                dir.display(),
-                n.to_string_lossy()
-            )),
+    for e in rd {
+        match e {
+            Ok(e) => match e.file_name().into_string() {
+                Ok(n) => names.push(n),
+                Err(n) => w.problems.push(format!(
+                    "{}: name is not UTF-8: {}",
+                    dir.display(),
+                    n.to_string_lossy()
+                )),
+            },
+            // an entry that cannot be read is a problem, never silently left out
+            Err(e) => w
+                .problems
+                .push(format!("{}: an entry cannot be read: {e}", dir.display())),
         }
     }
     names.sort();
@@ -62,8 +68,12 @@ pub(crate) fn walk(base: &Path, rel: &str, depth: usize, w: &mut Walk) {
         } else {
             format!("{rel}/{n}")
         };
-        let Ok(m) = fs::symlink_metadata(base.join(&r)) else {
-            continue;
+        let m = match fs::symlink_metadata(base.join(&r)) {
+            Ok(m) => m,
+            Err(e) => {
+                w.problems.push(format!("{r}: cannot be inspected: {e}"));
+                continue;
+            }
         };
         if m.file_type().is_symlink() {
             w.problems.push(format!("{r}: symbolic link"));

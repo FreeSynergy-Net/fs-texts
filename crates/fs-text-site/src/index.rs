@@ -39,6 +39,11 @@ pub struct SiteIndex {
     /// First segments below the site at which other sites of the same host lie: an absolute
     /// link into one of them is a link to that site, not a dead one.
     pub other_sites: Vec<String>,
+    /// Address starts (segments from the root of the host) that another site of the same name
+    /// owns outside this site (the landing page's `de`, a sibling's `blog`): an absolute link
+    /// that starts with one of them is a link to that site. Only the site is known here, not
+    /// whether the page exists there.
+    pub foreign_sites: Vec<Vec<String>>,
     /// `(lang, path below the language)` of every media file.
     pub media: BTreeMap<(Lang, String), MediaRef>,
 }
@@ -102,6 +107,18 @@ fn page_segments(mut segs: Vec<String>) -> Vec<String> {
 }
 
 impl SiteIndex {
+    /// Does the absolute address `p` start in a place that another site owns?
+    fn is_foreign(&self, p: &str) -> bool {
+        let Some(rest) = p.strip_prefix('/') else {
+            return false;
+        };
+        let path = rest.split(['?', '#']).next().unwrap_or_default();
+        let segs: Vec<&str> = path.split('/').collect();
+        self.foreign_sites
+            .iter()
+            .any(|c| segs.len() >= c.len() && segs.iter().zip(c).all(|(a, b)| a == b))
+    }
+
     fn langs<'a>(&'a self, lang: &'a Lang) -> impl Iterator<Item = &'a Lang> {
         let d = self.default_lang.as_ref().filter(|d| *d != lang);
         std::iter::once(lang).chain(d)
@@ -166,6 +183,7 @@ impl LinkResolver for PageLinks {
         }
         match self.index.find_media(&self.lang, &self.dir, link) {
             Some(m) => LinkTarget::Href(media_url(&self.index.prefix, &m.name)),
+            None if self.index.is_foreign(p) => LinkTarget::Href(p.to_string()),
             None => LinkTarget::Missing,
         }
     }

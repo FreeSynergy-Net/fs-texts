@@ -1,5 +1,12 @@
-schema = 1
+schema = 2
 purpose = "website"
+
+[site]
+id = "wiki"
+name = "Example Wiki"
+path_prefix = "/wiki"
+languages = ["de", "en"]
+default_language = "en"
 
 [names]
 primary = "example.test"

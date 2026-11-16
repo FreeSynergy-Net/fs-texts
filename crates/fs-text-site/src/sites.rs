@@ -1,6 +1,8 @@
 //! Several sites on one domain: the checks across sites.
 //!
-//! Pattern: Specification over a set (like `PassSet` for paths). Each site claims
+//! Pattern: Specification over a set (like `PassSet` for paths). The `site.id` is unique over
+//! the set (it is the name of the output folder and, in fs-release, of the folder on the
+//! server). Each site claims
 //! `(name, path)` for every name it answers to. Two sites may not claim the same pair; one may
 //! lie below the other (the landing page at `/`, the wiki at `/wiki`) only if the inner prefix
 //! does not sit on a name the outer site generates itself. The outer site then reserves that
@@ -48,21 +50,12 @@ impl SiteSet {
         &self.sites
     }
 
-    /// The name of the output folder of `site` below the output root: its `id` if no other site
-    /// has it, else `host` and prefix (`example.test`, `example.test_wiki`), so two sites of the
-    /// same name on different domains never write into one folder.
+    /// The name of the output folder of `site` below the output root: its `id`. The id is unique
+    /// over the whole set (checked in [`SiteSet::new`]), so two folders never collide, and the
+    /// folder has the name the server uses (`<webroot>/<id>`) in fs-release.
     #[must_use]
     pub fn out_name(&self, site: &SiteConfig) -> String {
-        let same = self.sites.iter().filter(|o| o.id == site.id).count();
-        if same <= 1 {
-            return site.id.clone();
-        }
-        let mut n = site.host.as_str().to_string();
-        for seg in site.path_prefix.segments() {
-            n.push('_');
-            n.push_str(seg);
-        }
-        n
+        site.id.clone()
     }
 
     /// The first segments (below the prefix of `site`) at which other sites on a shared name
@@ -84,6 +77,32 @@ impl SiteSet {
         out.sort();
         out
     }
+
+    /// The address starts (as segments, from the root of the host) that other sites of the same
+    /// name own and that do not lie inside `site`: the prefix of a site with a prefix (`wiki`), or
+    /// the language folders and generated names of a site at the root (`de`, `sitemap.xml`). An
+    /// absolute link of `site` that starts with one of them goes to that other site.
+    #[must_use]
+    pub fn foreign_claims(&self, site: &SiteConfig) -> Vec<Vec<String>> {
+        let mut out: Vec<Vec<String>> = Vec::new();
+        for o in self
+            .sites
+            .iter()
+            .filter(|o| *o != site && shares_name(site, o))
+        {
+            if site.path_prefix.is_prefix_of(&o.path_prefix) {
+                continue; // inside `site`: found by `nested_below`
+            }
+            if o.path_prefix.is_root() {
+                out.extend(generated_top(o).into_iter().map(|g| vec![g]));
+            } else {
+                out.push(o.path_prefix.segments().to_vec());
+            }
+        }
+        out.sort();
+        out.dedup();
+        out
+    }
 }
 
 fn shares_name(a: &SiteConfig, b: &SiteConfig) -> bool {
@@ -96,8 +115,21 @@ fn generated_top(s: &SiteConfig) -> Vec<String> {
     v
 }
 
+/// Every place a site owns on a host: its prefix and each of its `[[csp.area]]` folders.
+fn places(s: &SiteConfig) -> Vec<String> {
+    let mut v = vec![s.url_prefix()];
+    v.extend(
+        s.csp_areas
+            .iter()
+            .map(|a| format!("{}{}", s.url_prefix(), a.path.as_url())),
+    );
+    v
+}
+
 fn check_pair(a: &SiteConfig, b: &SiteConfig, errs: &mut Vec<ConfigError>) {
-    // The same `site.id` is fine on another host or path: only host and path can collide.
+    if a.id == b.id {
+        errs.push(ConfigError::SiteIdTwice { id: a.id.clone() });
+    }
     let Some(name) = a.names.iter().find(|n| b.names.contains(n)) else {
         return;
     };
@@ -114,6 +146,16 @@ fn check_pair(a: &SiteConfig, b: &SiteConfig, errs: &mut Vec<ConfigError>) {
             b: b.id.clone(),
             name: name.as_str().to_string(),
             path: path(a),
+        });
+        return;
+    }
+    // a site exactly on a folder rule of the other one: two equal routes on the server
+    if let Some(p) = places(a).into_iter().find(|p| places(b).contains(p)) {
+        errs.push(ConfigError::SiteCollision {
+            a: a.id.clone(),
+            b: b.id.clone(),
+            name: name.as_str().to_string(),
+            path: if p.is_empty() { "/".into() } else { p },
         });
         return;
     }

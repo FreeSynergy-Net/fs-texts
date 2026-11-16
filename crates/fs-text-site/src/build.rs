@@ -35,6 +35,10 @@ pub struct BuildOptions {
     /// Names below this site at which other sites of the same host lie (from the `SiteSet`);
     /// this site's pass-through may not use them.
     pub nested: Vec<String>,
+    /// Address starts (segments from the root of the host) that other sites of the same name
+    /// own and that do not lie inside this site (from the `SiteSet`): an absolute link that
+    /// starts with one of them goes to that site and is not dead.
+    pub foreign: Vec<Vec<String>>,
 }
 
 impl BuildOptions {
@@ -46,6 +50,7 @@ impl BuildOptions {
             policy: Policy::default(),
             max_file_bytes: Limits::default().max_bytes,
             nested: Vec::new(),
+            foreign: Vec::new(),
         }
     }
 }
@@ -81,6 +86,7 @@ pub fn build(
         prefix: prefix.clone(),
         default_lang: Some(cfg.default_language.clone()),
         other_sites: opt.nested.clone(),
+        foreign_sites: opt.foreign.clone(),
         ..SiteIndex::default()
     };
     register_media(src, &media.items, limits, &mut index, &mut rep);
@@ -155,7 +161,7 @@ pub fn build(
 }
 
 /// Build every site folder below `sites_root` (each holds a `site.toml`) into
-/// `out_root/<site.id>`. All `site.toml` files are checked together first: a host name or path
+/// `out_root/<site.id>` (the id is unique over the set). All `site.toml` files are checked together first: a host name or path
 /// two sites claim, or an inner site that sits on a generated name, stops everything before
 /// anything is written.
 pub fn build_all(
@@ -180,6 +186,7 @@ pub fn build_all(
     for s in &sources {
         let mut o = opt.clone();
         o.nested = set.nested_below(s.config());
+        o.foreign = set.foreign_claims(s.config());
         let id = set.out_name(s.config());
         let r = build(s, &out_root.join(&id), &o)?;
         out.push((id, r));

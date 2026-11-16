@@ -11,9 +11,16 @@ use fs_text_html::words::autonym;
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 
-/// `sitemap.xml`: every page once per language, each with all its variants and `x-default`.
+/// `sitemap.xml`: every page once per language, each with all its variants and `x-default`,
+/// then the generated contents pages (`contents`: one per language, its address differs by
+/// language). The contents page is in the navigation of every page, so it is in the sitemap
+/// too.
 #[must_use]
-pub fn sitemap(cfg: &SiteConfig, pages: &BTreeMap<Vec<String>, Vec<Lang>>) -> String {
+pub fn sitemap(
+    cfg: &SiteConfig,
+    pages: &BTreeMap<Vec<String>, Vec<Lang>>,
+    contents: &[(Lang, Vec<String>)],
+) -> String {
     let origin = cfg.origin();
     let prefix = cfg.url_prefix();
     let mut o = String::from(
@@ -22,26 +29,34 @@ pub fn sitemap(cfg: &SiteConfig, pages: &BTreeMap<Vec<String>, Vec<Lang>>) -> St
     let abs = |l: &Lang, p: &[String]| {
         format!("https://{}{}", cfg.host.as_str(), page_url(&prefix, l, p))
     };
-    for (path, langs) in pages {
-        for l in langs {
+    let url = |o: &mut String, own: &(Lang, &[String]), all: &[(Lang, &[String])]| {
+        o.push_str(&format!(
+            "<url>\n<loc>{}</loc>\n",
+            text_string(&abs(&own.0, own.1))
+        ));
+        // Same set as the HTML pages: all variants (also one) and x-default.
+        for (a, p) in all {
             o.push_str(&format!(
-                "<url>\n<loc>{}</loc>\n",
-                text_string(&abs(l, path))
+                "<xhtml:link rel=\"alternate\" hreflang=\"{}\" href=\"{}\"/>\n",
+                attr_string(a.as_str()),
+                attr_string(&abs(a, p))
             ));
-            // Same set as the HTML pages: all variants (also one) and x-default.
-            for a in langs {
-                o.push_str(&format!(
-                    "<xhtml:link rel=\"alternate\" hreflang=\"{}\" href=\"{}\"/>\n",
-                    attr_string(a.as_str()),
-                    attr_string(&abs(a, path))
-                ));
-            }
-            o.push_str(&format!(
-                "<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"{}/\"/>\n",
-                attr_string(&origin)
-            ));
-            o.push_str("</url>\n");
         }
+        o.push_str(&format!(
+            "<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"{}/\"/>\n",
+            attr_string(&origin)
+        ));
+        o.push_str("</url>\n");
+    };
+    for (path, langs) in pages {
+        let all: Vec<(Lang, &[String])> = langs.iter().map(|l| (l.clone(), &path[..])).collect();
+        for l in &all {
+            url(&mut o, l, &all);
+        }
+    }
+    let all: Vec<(Lang, &[String])> = contents.iter().map(|(l, p)| (l.clone(), &p[..])).collect();
+    for l in &all {
+        url(&mut o, l, &all);
     }
     o.push_str("</urlset>\n");
     o

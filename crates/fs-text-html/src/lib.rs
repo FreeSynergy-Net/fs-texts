@@ -41,7 +41,7 @@ mod table;
 mod tree;
 
 pub use exporter::{HtmlExporter, HtmlExporterBuilder};
-pub use frame::{render_page, Alternate, Csp, Frame};
+pub use frame::{render_page, Alternate, Csp, Frame, FRAME_MAIN_ID};
 pub use nav::{NavNode, Navigation};
 pub use page::{HtmlPage, TocEntry};
 pub use raw::RawHtmlPolicy;

@@ -9,6 +9,10 @@ use crate::nav::Navigation;
 use crate::page::HtmlPage;
 use crate::words::{autonym, Words};
 
+/// The `id` of the `<main>` element every page of the frame has (the target of the skip link).
+/// Such ids of the frame are anchors a link may point to; they are not in a page's body.
+pub const FRAME_MAIN_ID: &str = "main";
+
 /// The Content-Security-Policy written into the generated pages.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Csp {
@@ -119,7 +123,7 @@ pub fn render_page(f: &Frame, page: &HtmlPage) -> String {
         attr_string(&f.stylesheet)
     ));
     o.push_str(&format!(
-        "<a class=\"skip\" href=\"#main\">{}</a>\n",
+        "<a class=\"skip\" href=\"#{FRAME_MAIN_ID}\">{}</a>\n",
         text_string(w.skip)
     ));
     header(f, &w, &mut o);
@@ -128,7 +132,7 @@ pub fn render_page(f: &Frame, page: &HtmlPage) -> String {
         attr_string(w.nav),
         f.nav.render(&f.current)
     ));
-    o.push_str("<main id=\"main\">\n");
+    o.push_str(&format!("<main id=\"{FRAME_MAIN_ID}\">\n"));
     crumbs(f, &w, &mut o);
     if page.top_headings == 0 {
         if let Some(t) = title {

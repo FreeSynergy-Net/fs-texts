@@ -63,6 +63,11 @@ pub enum ConfigError {
         /// The shared path (`/` for the root).
         path: String,
     },
+    /// Two sites have the same `site.id`: it names the folder of the output and of the server.
+    SiteIdTwice {
+        /// The id.
+        id: String,
+    },
     /// A site below another one would sit on a name the outer site generates.
     NestedShadowed {
         /// The inner site.
@@ -86,7 +91,7 @@ impl fmt::Display for ConfigError {
             Self::BadPrefix { prefix, why } => write!(f, "path prefix {prefix:?}: {why}"),
             Self::Names(m) => write!(f, "names: {m}"),
             Self::BadId(m) => write!(f, "site.id: {m}"),
-            Self::BadName => write!(f, "site.name: 1 to 80 characters, no control characters"),
+            Self::BadName => write!(f, "site.name: 1 to 80 characters, no control, format or line-separator characters"),
             Self::BadLanguage(m) => write!(f, "languages: {m}"),
             Self::DefaultNotListed(l) => write!(f, "default_language {l:?} is not in languages"),
             Self::DnsRecords(m) => write!(f, "dns.records: {m}"),
@@ -100,6 +105,10 @@ impl fmt::Display for ConfigError {
             Self::SiteCollision { a, b, name, path } => {
                 write!(f, "sites {a:?} and {b:?} both claim {name}{path}")
             }
+            Self::SiteIdTwice { id } => write!(
+                f,
+                "two sites have the id {id:?}: it names the output folder and the folder on the server, so it must be unique over all sites"
+            ),
             Self::NestedShadowed {
                 inner,
                 outer,

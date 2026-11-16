@@ -52,23 +52,57 @@ fn an_alias_of_one_site_that_is_the_host_of_another_collides() {
 }
 
 #[test]
-fn the_same_id_on_two_domains_is_fine_and_gets_two_folders() {
+fn the_same_id_must_be_unique_over_the_whole_set() {
+    // fs-release names the folder on the server `<webroot>/<id>`: one id, one folder, also
+    // across hosts (it was allowed before, with a folder named after host and prefix)
     let a = site("wiki", "example.test", "/", "[\"de\"]");
     let b = site("wiki", "other.example.test", "/", "[\"de\"]");
     let c = site("wiki", "other.example.test", "/x", "[\"de\"]");
-    let set =
-        SiteSet::new(vec![a.clone(), b.clone(), c.clone()]).expect("only host and path collide");
-    assert_eq!(set.out_name(&a), "example.test");
-    assert_eq!(set.out_name(&b), "other.example.test");
-    assert_eq!(set.out_name(&c), "other.example.test_x");
-    // the nesting of c below b is still found although the ids are equal
-    assert_eq!(set.nested_below(&b), vec!["x".to_string()]);
-    // counter-probe: the same host and path with the same id still collides
-    let r = SiteSet::new(vec![a.clone(), a]);
-    assert!(matches!(
-        r.unwrap_err()[0],
-        ConfigError::SiteCollision { .. }
-    ));
+    for pair in [vec![a.clone(), b.clone()], vec![b.clone(), c.clone()]] {
+        let e = SiteSet::new(pair).unwrap_err();
+        assert!(
+            e.iter()
+                .any(|e| matches!(e, ConfigError::SiteIdTwice { id } if id == "wiki")),
+            "{e:?}"
+        );
+    }
+    // counter-probe: different ids on different hosts and paths are fine, folder = id
+    let b2 = site("blog", "other.example.test", "/", "[\"de\"]");
+    let c2 = site("shop", "other.example.test", "/x", "[\"de\"]");
+    let set = SiteSet::new(vec![a.clone(), b2.clone(), c2.clone()]).expect("ids differ");
+    assert_eq!(set.out_name(&a), "wiki");
+    assert_eq!(set.out_name(&b2), "blog");
+    assert_eq!(set.out_name(&c2), "shop");
+    // the nesting of c2 below b2 is found
+    assert_eq!(set.nested_below(&b2), vec!["x".to_string()]);
+    // the same host and path with the same id still collides, now with both reasons
+    let r = SiteSet::new(vec![a.clone(), a]).unwrap_err();
+    assert!(r
+        .iter()
+        .any(|e| matches!(e, ConfigError::SiteCollision { .. })));
+}
+
+#[test]
+fn a_site_exactly_on_a_folder_rule_of_another_site_is_refused() {
+    // fs-release: two equal routes, the order of the arguments would decide silently
+    let mut outer = site("main", "example.test", "/", "[\"de\"]");
+    let inner = site("wiki", "example.test", "/wiki", "[\"de\"]");
+    assert!(SiteSet::new(vec![outer.clone(), inner.clone()]).is_ok());
+    let area = SiteConfig::parse(&format!(
+        "{}[[csp.area]]\npath = \"/wiki\"\nmode = \"static\"\n",
+        v2("", "primary = \"example.test\"").replace(
+            "[acme]\nmethod = \"http-01\"\n",
+            "[acme]\nmethod = \"http-01\"\n[csp]\n"
+        )
+    ))
+    .unwrap();
+    outer.csp_areas = area.csp_areas;
+    let e = SiteSet::new(vec![outer, inner]).unwrap_err();
+    assert!(
+        e.iter()
+            .any(|e| matches!(e, ConfigError::SiteCollision { path, .. } if path == "/wiki")),
+        "{e:?}"
+    );
 }
 
 #[test]

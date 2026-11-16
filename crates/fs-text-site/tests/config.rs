@@ -147,7 +147,9 @@ fn csp_areas_decide_per_folder() {
         CspMode::Static,
         "whole segments only"
     );
-    assert!(c.to_schema1().contains("mode = \"passthrough\""));
+    assert!(c
+        .to_package_toml()
+        .contains("path = \"/apps\"\nmode = \"passthrough\""));
     for bad in [
         "[[csp.area]]\npath = \"/\"\n",
         "[[csp.area]]\npath = \"/a\"\n[[csp.area]]\npath = \"/a\"\n",
@@ -236,21 +238,25 @@ fn dns_acme_csp_rules_of_schema_1_hold() {
             "{bad}"
         );
     }
-    assert!(SiteConfig::parse(&base("[csp]\npolicy = \"default-src 'self'\"\n")).is_ok());
-}
-
-#[test]
-fn schema1_output_reads_back_the_same_and_has_no_site_table() {
-    let t = v2(
-        "path_prefix = \"/wiki\"\nlanguages = [\"de\"]",
-        "primary = \"example.test\"\naliases = [\"www.example.test\"]",
-    ) + "[dns]\nrecords = [\"A\", \"CAA\"]\n[csp]\nmode = \"passthrough\"\npolicy = \"default-src 'self'\"\n";
-    let c = SiteConfig::parse(&t).unwrap();
-    let out = c.to_schema1();
-    assert!(!out.contains("[site]"));
-    let back = SiteConfig::parse(&out).unwrap();
-    assert_eq!(back.names, c.names);
-    assert_eq!(back.dns_records, c.dns_records);
-    assert_eq!(back.csp_mode, c.csp_mode);
-    assert_eq!(back.csp_policy, c.csp_policy);
+    // fs-release refuses a looser page policy in a static site, so the build refuses it first
+    let e = SiteConfig::parse(&base("[csp]\npolicy = \"default-src 'self'\"\n")).unwrap_err();
+    assert!(e.to_string().contains("script-src must be 'none'"), "{e}");
+    let strict = "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+    assert!(SiteConfig::parse(&base(&format!("[csp]\npolicy = \"{strict}\"\n"))).is_ok());
+    // a passthrough site does not judge the HTML of the user
+    assert!(SiteConfig::parse(&base(
+        "[csp]\nmode = \"passthrough\"\npolicy = \"default-src 'self'\"\n"
+    ))
+    .is_ok());
+    // what fs-release refuses in a static page policy: unknown or twice, other values, none at all
+    for bad in [
+        "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; sandbox x",
+        "default-src 'self'; default-src 'none'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'",
+        "default-src 'self' https://x.test; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'",
+        "script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'",
+        "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'",
+    ] {
+        let t = base(&format!("[csp]\npolicy = \"{bad}\"\n"));
+        assert!(SiteConfig::parse(&t).is_err(), "{bad}");
+    }
 }

@@ -7,7 +7,8 @@
 use crate::error::ConfigError;
 
 /// A lower-case ASCII DNS name (labels of `a-z 0-9 -`; an international name only as its A-label
-/// `xn--…`, in the last label too). Never a wildcard, never with a trailing dot.
+/// `xn--…`, in the last label too; every A-label must decode as Punycode, the last one has two
+/// characters or more after `xn--`, like in fs-release). Never a wildcard, never with a trailing dot.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Host(String);
 
@@ -69,9 +70,14 @@ impl Host {
             if l.starts_with("xn--") && l.len() < 5 {
                 return Err(bad("empty xn-- label"));
             }
+            // schema 2: an A-label must be real Punycode (fs-release decodes it, too)
+            if a_label_tld && l.starts_with("xn--") && !crate::punycode::decodes(&l[4..]) {
+                return Err(bad("an xn-- label that is not valid Punycode"));
+            }
             if last {
                 let alpha = l.len() >= 2 && l.bytes().all(|b| b.is_ascii_lowercase());
-                let a_label = a_label_tld && l.starts_with("xn--");
+                // an A-label as the last label has at least two characters after `xn--`
+                let a_label = a_label_tld && l.starts_with("xn--") && l.len() >= 6;
                 if !alpha && !a_label {
                     return Err(bad(
                         "the last label must be 2 to 63 letters (or an xn-- label)",
@@ -87,6 +93,37 @@ impl Host {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+}
+
+/// A character a site name may not hold: control, format (Cf: zero-width, bidi override, BOM)
+/// or line and paragraph separator (Zl, Zp), as fs-release refuses them.
+#[must_use]
+pub(crate) fn name_char_bad(c: char) -> bool {
+    const FORMAT: [(u32, u32); 21] = [
+        (0xAD, 0xAD),
+        (0x600, 0x605),
+        (0x61C, 0x61C),
+        (0x6DD, 0x6DD),
+        (0x70F, 0x70F),
+        (0x890, 0x891),
+        (0x8E2, 0x8E2),
+        (0x180E, 0x180E),
+        (0x200B, 0x200F),
+        (0x2028, 0x202E),
+        (0x2060, 0x2064),
+        (0x2066, 0x206F),
+        (0xFEFF, 0xFEFF),
+        (0xFFF9, 0xFFFB),
+        (0x110BD, 0x110BD),
+        (0x110CD, 0x110CD),
+        (0x13430, 0x1343F),
+        (0x1BCA0, 0x1BCA3),
+        (0x1D173, 0x1D17A),
+        (0xE0001, 0xE0001),
+        (0xE0020, 0xE007F),
+    ];
+    let u = u32::from(c);
+    c.is_control() || FORMAT.iter().any(|(a, b)| (*a..=*b).contains(&u))
 }
 
 /// `s` with every control character and quote shown as an escape, for messages (a refused name

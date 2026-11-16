@@ -27,7 +27,7 @@ pub enum DnsRecord {
 }
 
 impl DnsRecord {
-    fn name(self) -> &'static str {
+    pub(crate) fn name(self) -> &'static str {
         match self {
             Self::A => "A",
             Self::Aaaa => "AAAA",
@@ -191,7 +191,7 @@ impl SiteConfig {
         }
         self.id = s.id;
         if let Some(n) = s.name {
-            if n.is_empty() || n.chars().count() > 80 || n.chars().any(char::is_control) {
+            if n.is_empty() || n.chars().count() > 80 || n.chars().any(crate::host::name_char_bad) {
                 return Err(ConfigError::BadName);
             }
             self.name = n;
@@ -227,35 +227,6 @@ impl SiteConfig {
             self.default_language = d;
         }
         Ok(())
-    }
-
-    /// The `site.toml` of the output folder: schema 1, which the release check of fs-release
-    /// reads. Only what that file knows (`names`, `dns`, `acme`, `csp`); the schema 2 fields
-    /// (`site`) stay in the source. Values are checked, so nothing needs escaping.
-    #[must_use]
-    pub fn to_schema1(&self) -> String {
-        let q = |s: &str| format!("\"{s}\"");
-        let mut o = String::from("schema = 1\npurpose = \"website\"\n\n[names]\n");
-        o.push_str(&format!("primary = {}\n", q(self.names[0].as_str())));
-        if self.names.len() > 1 {
-            let a: Vec<String> = self.names[1..].iter().map(|n| q(n.as_str())).collect();
-            o.push_str(&format!("aliases = [{}]\n", a.join(", ")));
-        }
-        let r: Vec<String> = self.dns_records.iter().map(|r| q(r.name())).collect();
-        o.push_str(&format!("\n[dns]\nrecords = [{}]\n", r.join(", ")));
-        o.push_str("\n[acme]\nmethod = \"http-01\"\n\n[csp]\n");
-        // schema 1 has one mode per site: passthrough as soon as any folder needs it
-        let any = self.csp_mode == CspMode::Passthrough
-            || self
-                .csp_areas
-                .iter()
-                .any(|a| a.mode == CspMode::Passthrough);
-        let m = if any { "passthrough" } else { "static" };
-        o.push_str(&format!("mode = {}\n", q(m)));
-        if let Some(p) = &self.csp_policy {
-            o.push_str(&format!("policy = {}\n", q(p)));
-        }
-        o
     }
 
     /// The prefix as it starts every address of the site (`""` for the root).
