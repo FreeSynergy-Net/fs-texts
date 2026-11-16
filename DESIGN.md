@@ -3,10 +3,11 @@
 `fs-wiki` is the wiki program of FreeSynergy and the **owner of the text interface** (ADR 0031, 0050): every text is a wiki
 entry, a collection of texts is a wiki. The database is the truth, files are exports (ADR 0042). The contract is `texts.capnp`
 in [`fs-interfaces`](https://github.com/FreeSynergy/fs-interfaces) (ADR 0045); this program is its provider. This repo holds
-seven crates (one of them only for tests, one the single binary); the GUI lives only in `fs-wiki-app`, on [`fs-components`](https://github.com/FreeSynergy/fs-components) (Blinc):
+eight crates (one of them only for tests, one the single binary); the GUI lives only in `fs-wiki-app`, on [`fs-components`](https://github.com/FreeSynergy/fs-components) (Blinc):
 
 * `crates/fs-text`: the **library** of text + layers (document, marks, Markdown, outside changes, links, templates, history).
   No storage, no interface. Its own design is in [`crates/fs-text/DESIGN.md`](crates/fs-text/DESIGN.md).
+* `crates/fs-text-html`: **text as HTML** (the `Exporter` for HTML, page frame with a short navigation, byte-exact pass-through of user files); depends only on `fs-text`, no GUI. Design: [`crates/fs-text-html/DESIGN.md`](crates/fs-text-html/DESIGN.md).
 * `crates/fs-wiki-app`: the **first visible part**, a thin shell: imports a folder of Markdown files, maps texts to the neutral
   blocks of `fs-components`, and offers the wiki to the reader workbench as its data source. No Blinc type appears in it. It talks to
   the running `fs-wiki-server` through `fs-wiki-client` (ADR 0021), never to `WikiRepo` or a store.

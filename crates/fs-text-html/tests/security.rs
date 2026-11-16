@@ -14,6 +14,8 @@ fn unsafe_schemes_are_refused() {
         " javascript:x",
         "java\tscript:x",
         "java\nscript:x",
+        "https://a.b/\u{1}x",
+        "https://a.b/a\tb",
         "data:text/html,x",
         "vbscript:x",
         "file:///etc/passwd",
@@ -200,4 +202,61 @@ proptest! {
         ]), 0..40)) {
         check(&import_markdown(&parts.concat()));
     }
+}
+
+struct Evil;
+impl fs_text_html::LinkResolver for Evil {
+    fn resolve(&self, _: &fs_text::LinkValue) -> fs_text_html::LinkTarget {
+        fs_text_html::LinkTarget::Href("javascript:alert(1)".into())
+    }
+}
+impl fs_text_html::MediaResolver for Evil {
+    fn resolve(&self, _: &fs_text::LinkValue) -> Option<fs_text_html::MediaTarget> {
+        Some(fs_text_html::MediaTarget {
+            src: "javascript:alert(1)".into(),
+            width: None,
+            height: None,
+        })
+    }
+}
+
+#[test]
+fn a_resolver_cannot_bring_in_an_unsafe_address() {
+    let e = HtmlExporterBuilder::default()
+        .links(Evil)
+        .media(Evil)
+        .build();
+    let p = e.render(&import_markdown("[a](x.md) ![b](y.png)"));
+    assert!(!p.body.contains("javascript"), "{}", p.body);
+    assert!(p
+        .report
+        .problems
+        .iter()
+        .any(|x| matches!(x, Problem::UnsafeLink { .. })));
+    assert!(p
+        .report
+        .problems
+        .iter()
+        .any(|x| matches!(x, Problem::UnsafeMedia { .. })));
+}
+
+#[test]
+fn a_link_inside_a_link_is_not_nested() {
+    use fs_text::{Block, LinkStyle, LinkValue, Mark, MarkKind, MarkValue};
+    let l = |p: &str| MarkValue::Link(LinkValue::new(p, LinkStyle::Inline));
+    let mut b = Block::paragraph("abcdef");
+    b.marks.add(Mark::new(MarkKind::Link, 0, 6, l("a.md")));
+    b.marks.add(Mark::new(MarkKind::Link, 2, 4, l("b.md")));
+    let h = fs_text_html::HtmlExporter::default()
+        .render_blocks(&[b])
+        .body;
+    assert_eq!(h, "<p><a href=\"a.md\">abcdef</a></p>\n");
+}
+
+#[test]
+fn only_lang_and_title_survive_on_allowed_tags() {
+    let b = html("<kbd onclick=\"x\" title=\"t\" style=\"y\" id=\"z\" lang=\"en\">k</kbd>\n");
+    assert!(b.contains("<kbd title=\"t\" lang=\"en\">k</kbd>"), "{b}");
+    let b = html("<kbd lang=\"en\\x\">k</kbd>\n");
+    assert!(!b.contains("lang"), "{b}");
 }
