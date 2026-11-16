@@ -1,0 +1,29 @@
+[package]
+name = "fs-texts-bin"
+description = "FreeSynergy.Texts: texts and pages, with history, trash, folders and search. Without arguments the window opens; `serve` runs the server."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "fs-texts"
+path = "src/main.rs"
+
+[features]
+default = ["gui"]
+# The window (Blinc). Without it the binary has the server only: `cargo build --no-default-features`.
+gui = ["dep:fs-texts-app"]
+# Only for the typing test, in a debug build (see fs-texts-app): the window writes the text of its fields to
+# FS_TEST_ACCESS_FILE. Never in a release.
+test-access = ["gui", "fs-texts-app/test-access"]
+
+[dependencies]
+fs-texts-server = { path = "../fs-texts-server" }
+fs-texts-app = { path = "../fs-texts-app", optional = true }
+
+[dev-dependencies]
+# Reads the picture of the window to count the rows of the page tree (already in the lock).
+png = "0.18"

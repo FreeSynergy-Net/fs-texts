@@ -1737,7 +1737,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fs-text"
+name = "fs-texts"
 version = "0.0.12"
 dependencies = [
  "proptest",
@@ -1752,31 +1752,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fs-types"
-version = "0.0.1"
-source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19#90e62c30ad3af06beaa4edabce14e1448fdce9f3"
-dependencies = [
- "capnp",
- "capnp-rpc",
- "chrono",
- "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19)",
- "geo-uri",
- "iri-string",
- "oxilangtag",
- "unicode-normalization",
-]
-
-[[package]]
-name = "fs-wiki"
-version = "0.0.12"
-dependencies = [
- "fs-wiki-app",
- "fs-wiki-server",
- "png 0.18.1",
-]
-
-[[package]]
-name = "fs-wiki-app"
+name = "fs-texts-app"
 version = "0.0.12"
 dependencies = [
  "async-trait",
@@ -1796,11 +1772,11 @@ dependencies = [
  "fs-components-workbenches",
  "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19)",
  "fs-objects",
- "fs-text",
+ "fs-texts",
+ "fs-texts-client",
+ "fs-texts-core",
+ "fs-texts-testserver",
  "fs-types",
- "fs-wiki-client",
- "fs-wiki-core",
- "fs-wiki-testserver",
  "futures",
  "png 0.18.1",
  "rustix 1.1.6",
@@ -1813,7 +1789,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "fs-wiki-client"
+name = "fs-texts-bin"
+version = "0.0.12"
+dependencies = [
+ "fs-texts-app",
+ "fs-texts-server",
+ "png 0.18.1",
+]
+
+[[package]]
+name = "fs-texts-client"
 version = "0.0.12"
 dependencies = [
  "async-trait",
@@ -1821,11 +1806,11 @@ dependencies = [
  "capnp-rpc",
  "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19)",
  "fs-objects",
- "fs-text",
+ "fs-texts",
+ "fs-texts-core",
+ "fs-texts-server",
+ "fs-texts-testserver",
  "fs-types",
- "fs-wiki-core",
- "fs-wiki-server",
- "fs-wiki-testserver",
  "futures",
  "serde_json",
  "tempfile",
@@ -1833,14 +1818,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "fs-wiki-core"
+name = "fs-texts-core"
 version = "0.0.12"
 dependencies = [
  "async-trait",
  "chrono",
  "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19)",
  "fs-objects",
- "fs-text",
+ "fs-texts",
  "fs-types",
  "serde",
  "serde_json",
@@ -1852,7 +1837,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fs-wiki-server"
+name = "fs-texts-server"
 version = "0.0.12"
 dependencies = [
  "async-trait",
@@ -1862,9 +1847,9 @@ dependencies = [
  "fs-hub-client",
  "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19)",
  "fs-objects",
- "fs-text",
+ "fs-texts",
+ "fs-texts-core",
  "fs-types",
- "fs-wiki-core",
  "serde_json",
  "tempfile",
  "tokio",
@@ -1872,15 +1857,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "fs-wiki-testserver"
+name = "fs-texts-testserver"
 version = "0.0.12"
 dependencies = [
  "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19)",
  "fs-objects",
- "fs-wiki-core",
- "fs-wiki-server",
+ "fs-texts-core",
+ "fs-texts-server",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "fs-types"
+version = "0.0.1"
+source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19#90e62c30ad3af06beaa4edabce14e1448fdce9f3"
+dependencies = [
+ "capnp",
+ "capnp-rpc",
+ "chrono",
+ "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19)",
+ "geo-uri",
+ "iri-string",
+ "oxilangtag",
+ "unicode-normalization",
 ]
 
 [[package]]

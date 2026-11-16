@@ -1,0 +1,15 @@
+[package]
+name = "fs-texts-testserver"
+description = "The real fs-texts-server on a real Unix socket for the tests of the client and the app (dev-dependency only, not published)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+fs-texts-core = { path = "../fs-texts-core" }
+fs-texts-server = { path = "../fs-texts-server" }
+fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.19", features = ["rpc"] }
+fs-objects = { git = "https://github.com/FreeSynergy/fs-objects", tag = "v0.0.1" }
+tempfile = "3"
+tokio = { version = "1", features = ["full"] }

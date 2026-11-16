@@ -1,0 +1,27 @@
+[package]
+name = "fs-texts-core"
+description = "Program core of the FreeSynergy wiki: texts (fs-texts documents) over fs-objects behind the Texts interface, link table, moves that rewrite links, Markdown import/export"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+# Text + layers, Markdown, links, outside changes; no storage (same workspace).
+fs-texts = { path = "../fs-texts" }
+fs-objects = { git = "https://github.com/FreeSynergy/fs-objects", tag = "v0.0.1" }
+# The contract and the provider rule (ADR 0045).
+fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.19" }
+fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.19" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+async-trait = "0.1"
+tokio = { version = "1", features = ["sync"] }
+# Ids of the revision records (derived from the text id) and the time of a write.
+uuid = { version = "1", features = ["v5"] }
+unicode-normalization = "0.1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+tempfile = "3"
