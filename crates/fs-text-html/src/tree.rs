@@ -31,11 +31,9 @@ fn level<'a>(blocks: &[&'a Block], depth: usize) -> Vec<Node<'a>> {
         };
         let mut j = i + 1;
         while j < blocks.len()
-            && blocks[j]
-                .attrs
-                .containers
-                .get(depth)
-                .is_some_and(|d| d.inst() == c.inst() && std::mem::discriminant(d) == std::mem::discriminant(c))
+            && blocks[j].attrs.containers.get(depth).is_some_and(|d| {
+                d.inst() == c.inst() && std::mem::discriminant(d) == std::mem::discriminant(c)
+            })
         {
             j += 1;
         }

@@ -13,7 +13,14 @@ impl Renderer<'_, '_> {
     /// Write the text of `b` with its marks.
     pub(crate) fn inline_of(&mut self, b: &Block, out: &mut String) {
         let chars: Vec<char> = b.text.chars().collect();
-        inline::render(self.env, &mut self.st, &chars, b.marks.as_slice(), (0, chars.len()), out);
+        inline::render(
+            self.env,
+            &mut self.st,
+            &chars,
+            b.marks.as_slice(),
+            (0, chars.len()),
+            out,
+        );
     }
 
     pub(crate) fn leaf(&mut self, b: &Block, tight: bool, out: &mut String) {
@@ -53,7 +60,8 @@ impl Renderer<'_, '_> {
             BlockKind::Html => {
                 let before = self.raw.depth();
                 let mut inner = String::new();
-                self.raw.feed(&b.text.to_string(), &mut inner, &mut self.st.report);
+                self.raw
+                    .feed(&b.text.to_string(), &mut inner, &mut self.st.report);
                 // a tag left open (or opened earlier) spans blocks: no wrapper then
                 if before > 0 || self.raw.depth() > 0 {
                     out.push_str(inner.trim_matches('\n'));
@@ -82,14 +90,17 @@ impl Renderer<'_, '_> {
             .map(|c| if c == HARD_BREAK { ' ' } else { c })
             .collect();
         let id = match own_id(b) {
-            Some(w) => self.st.ids.take(w),
+            Some(w) => self.st.ids.take(&w),
             None => self.st.ids.unique(&plain),
         };
         if level == 1 {
             self.tops += 1;
         }
         if self.last_level != 0 && level > self.last_level + 1 {
-            self.st.report.note(Problem::HeadingJump { from: self.last_level, to: level });
+            self.st.report.note(Problem::HeadingJump {
+                from: self.last_level,
+                to: level,
+            });
         }
         self.last_level = level;
         out.push_str(&format!("<h{level} id=\""));
@@ -97,15 +108,24 @@ impl Renderer<'_, '_> {
         out.push_str("\">");
         self.inline_of(b, out);
         out.push_str(&format!("</h{level}>\n"));
-        self.toc.push(TocEntry { level, id, text: plain.trim().to_string() });
+        self.toc.push(TocEntry {
+            level,
+            id,
+            text: plain.trim().to_string(),
+        });
     }
 }
 
 /// The `{#id}` of a heading, if it is a plain id.
 fn own_id(b: &Block) -> Option<String> {
     let a = b.attrs.heading_attrs.as_deref()?;
-    let id = a.trim_matches(['{', '}']).split_whitespace().find_map(|w| w.strip_prefix('#'))?;
+    let id = a
+        .trim_matches(['{', '}'])
+        .split_whitespace()
+        .find_map(|w| w.strip_prefix('#'))?;
     let ok = id.starts_with(|c: char| c.is_ascii_alphabetic())
-        && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
     ok.then(|| id.to_string())
 }

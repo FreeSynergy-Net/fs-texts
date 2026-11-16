@@ -21,7 +21,9 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Self { max_bytes: 10 * 1024 * 1024 }
+        Self {
+            max_bytes: 10 * 1024 * 1024,
+        }
     }
 }
 
@@ -37,7 +39,12 @@ pub struct Copied {
 }
 
 /// Copy `root/rel` to `dest/rel` unchanged, after all checks.
-pub fn copy_file(root: &Path, rel: &PassPath, dest: &Path, limits: Limits) -> Result<Copied, PassError> {
+pub fn copy_file(
+    root: &Path,
+    rel: &PassPath,
+    dest: &Path,
+    limits: Limits,
+) -> Result<Copied, PassError> {
     let media = MediaType::from_extension(&rel.extension().unwrap_or_default())?;
     let mut src = open_plain(root, rel)?;
     let to = dest.join(rel.as_str());
@@ -53,7 +60,12 @@ pub fn copy_file(root: &Path, rel: &PassPath, dest: &Path, limits: Limits) -> Re
     r
 }
 
-fn stream(src: &mut impl Read, out: &mut impl Write, media: MediaType, limits: Limits) -> Result<Copied, PassError> {
+fn stream(
+    src: &mut impl Read,
+    out: &mut impl Write,
+    media: MediaType,
+    limits: Limits,
+) -> Result<Copied, PassError> {
     let mut probe = Prober::new(media);
     let mut hash = Sha256::new();
     let mut buf = vec![0u8; 64 * 1024];
@@ -73,7 +85,11 @@ fn stream(src: &mut impl Read, out: &mut impl Write, media: MediaType, limits: L
     }
     probe.finish()?;
     out.flush()?;
-    Ok(Copied { bytes: total, sha256: hash.finalize().into(), media })
+    Ok(Copied {
+        bytes: total,
+        sha256: hash.finalize().into(),
+        media,
+    })
 }
 
 #[cfg(unix)]

@@ -65,12 +65,12 @@ impl Default for Ids {
 impl Ids {
     /// Take a free id for `base`: the slug, then `slug-2`, `slug-3`, ….
     pub fn unique(&mut self, base: &str) -> String {
-        self.take(slug(base))
+        self.take(&slug(base))
     }
 
     /// Take `wanted` itself, or the next free `wanted-2`, ….
-    pub fn take(&mut self, wanted: String) -> String {
-        let mut id = wanted.clone();
+    pub fn take(&mut self, wanted: &str) -> String {
+        let mut id = wanted.to_string();
         let mut n = 2;
         while !self.used.insert(id.clone()) {
             id = format!("{wanted}-{n}");

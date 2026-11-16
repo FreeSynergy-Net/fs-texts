@@ -103,7 +103,15 @@ impl MediaType {
     fn is_text(self) -> bool {
         matches!(
             self,
-            Self::Html | Self::Css | Self::Js | Self::Mjs | Self::Json | Self::Svg | Self::Txt | Self::Xml | Self::Webmanifest
+            Self::Html
+                | Self::Css
+                | Self::Js
+                | Self::Mjs
+                | Self::Json
+                | Self::Svg
+                | Self::Txt
+                | Self::Xml
+                | Self::Webmanifest
         )
     }
 
@@ -113,7 +121,11 @@ impl MediaType {
             Self::Jpeg => h.starts_with(&[0xff, 0xd8, 0xff]),
             Self::Gif => h.starts_with(b"GIF87a") || h.starts_with(b"GIF89a"),
             Self::Webp => h.len() >= 12 && &h[..4] == b"RIFF" && &h[8..12] == b"WEBP",
-            Self::Avif => h.len() >= 12 && &h[4..8] == b"ftyp" && (&h[8..12] == b"avif" || &h[8..12] == b"avis"),
+            Self::Avif => {
+                h.len() >= 12
+                    && &h[4..8] == b"ftyp"
+                    && (&h[8..12] == b"avif" || &h[8..12] == b"avis")
+            }
             Self::Ico => h.starts_with(&[0, 0, 1, 0]),
             Self::Woff2 => h.starts_with(b"wOF2"),
             Self::Pdf => h.starts_with(b"%PDF-"),
@@ -125,8 +137,12 @@ impl MediaType {
         let text = String::from_utf8_lossy(h);
         let t = text.trim_start_matches('\u{feff}').trim_start();
         match self {
-            Self::Svg if !t.to_ascii_lowercase().contains("<svg") => Err(PassError::ContentMismatch("no <svg> element")),
-            Self::Xml if !t.starts_with('<') => Err(PassError::ContentMismatch("XML does not start with `<`")),
+            Self::Svg if !t.to_ascii_lowercase().contains("<svg") => {
+                Err(PassError::ContentMismatch("no <svg> element"))
+            }
+            Self::Xml if !t.starts_with('<') => {
+                Err(PassError::ContentMismatch("XML does not start with `<`"))
+            }
             _ => Ok(()),
         }
     }
@@ -146,7 +162,11 @@ impl Prober {
     /// A prober for a file of type `media`.
     #[must_use]
     pub fn new(media: MediaType) -> Self {
-        Self { media, head: Vec::new(), carry: Vec::new() }
+        Self {
+            media,
+            head: Vec::new(),
+            carry: Vec::new(),
+        }
     }
 
     /// Look at the next chunk.
@@ -177,7 +197,9 @@ impl Prober {
             return Err(PassError::ContentMismatch("not valid UTF-8"));
         }
         if !self.media.magic_ok(&self.head) {
-            return Err(PassError::ContentMismatch("the file does not start like its extension says"));
+            return Err(PassError::ContentMismatch(
+                "the file does not start like its extension says",
+            ));
         }
         self.media.head_ok(&self.head)
     }

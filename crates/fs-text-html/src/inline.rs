@@ -5,11 +5,11 @@
 //! tags are always nested. Layer marks (passage, variable, explanation) are not exported
 //! (ADR 0042): the original text stays.
 
+use crate::atoms::{footnote, image, link_tag};
 use crate::escape;
 use crate::raw::Cleaner;
 use crate::report::Problem;
 use crate::state::{Env, PageState};
-use crate::url::safe_link;
 use fs_text::markdown::HARD_BREAK;
 use fs_text::{Mark, MarkKind, MarkValue};
 
@@ -44,7 +44,8 @@ pub(crate) fn render(
             MarkKind::Variable => {
                 if m.start >= a && m.start <= b {
                     if let MarkValue::Variable { name, .. } = &m.value {
-                        st.report.note(Problem::UnfilledVariable { name: name.clone() });
+                        st.report
+                            .note(Problem::UnfilledVariable { name: name.clone() });
                     }
                 }
                 false
@@ -127,7 +128,14 @@ fn close_ended(stack: &mut Vec<Open>, clean: &mut Cleaner, p: usize, out: &mut S
     clean.set_floor(stack.last().map_or(0, |o| o.san));
 }
 
-fn open(env: &Env, st: &mut PageState, stack: &mut Vec<Open>, clean: &Cleaner, m: &Mark, out: &mut String) {
+fn open(
+    env: &Env,
+    st: &mut PageState,
+    stack: &mut Vec<Open>,
+    clean: &Cleaner,
+    m: &Mark,
+    out: &mut String,
+) {
     let (tag, close): (String, &'static str) = match m.kind {
         MarkKind::Strong => ("<strong>".into(), "</strong>"),
         MarkKind::Emphasis => ("<em>".into(), "</em>"),
@@ -137,77 +145,17 @@ fn open(env: &Env, st: &mut PageState, stack: &mut Vec<Open>, clean: &Cleaner, m
             if stack.iter().any(|o| o.close == "</a>") {
                 return;
             }
-            let Some(t) = link_tag(env, st, m) else { return };
+            let Some(t) = link_tag(env, st, m) else {
+                return;
+            };
             (t, "</a>")
         }
     };
     out.push_str(&tag);
-    stack.push(Open { end: m.end, close, tag, san: clean.depth() });
-}
-
-fn link_tag(env: &Env, st: &mut PageState, m: &Mark) -> Option<String> {
-    let l = m.link()?;
-    if !safe_link(&l.path) {
-        st.report.note(Problem::UnsafeLink { path: l.path.clone() });
-        return None;
-    }
-    let href = match env.links.resolve(l) {
-        crate::LinkTarget::Href(h) if safe_link(&h) => h,
-        crate::LinkTarget::Href(h) => {
-            st.report.note(Problem::UnsafeLink { path: h });
-            return None;
-        }
-        crate::LinkTarget::Missing | crate::LinkTarget::NotPublic => {
-            st.report.note(Problem::DeadLink { path: l.path.clone() });
-            return None;
-        }
-    };
-    st.used_link(&href);
-    let mut t = String::from("<a href=\"");
-    escape::attr(href.trim(), &mut t);
-    t.push('"');
-    if let Some(title) = l.title.as_deref().filter(|s| !s.is_empty()) {
-        t.push_str(" title=\"");
-        escape::attr(title, &mut t);
-        t.push('"');
-    }
-    t.push('>');
-    Some(t)
-}
-
-fn image(env: &Env, st: &mut PageState, chars: &[char], m: &Mark, (a, b): (usize, usize), out: &mut String) {
-    let Some(l) = m.link() else { return };
-    let alt: String = chars[m.start.max(a)..m.end.min(b)].iter().collect();
-    let Some(t) = env.media.resolve(l).filter(|t| safe_link(&t.src)) else {
-        st.report.note(Problem::UnsafeMedia { src: l.path.clone() });
-        escape::text(&alt, out);
-        return;
-    };
-    if alt.trim().is_empty() {
-        st.report.note(Problem::MissingAlt { src: l.path.clone() });
-    }
-    st.used_media(&t.src);
-    out.push_str("<img src=\"");
-    escape::attr(&t.src, out);
-    out.push_str("\" alt=\"");
-    escape::attr(&alt.replace(HARD_BREAK, " "), out);
-    out.push('"');
-    if let (Some(w), Some(h)) = (t.width, t.height) {
-        out.push_str(&format!(" width=\"{w}\" height=\"{h}\""));
-    }
-    out.push_str(" loading=\"lazy\">");
-}
-
-fn footnote(st: &mut PageState, m: &Mark, out: &mut String) {
-    let MarkValue::Name(label) = &m.value else { return };
-    match st.note_number(label) {
-        Some((n, k)) => {
-            let id = if k == 1 { format!("fnref-{n}") } else { format!("fnref-{n}-{k}") };
-            out.push_str(&format!("<sup class=\"fnref\"><a id=\"{id}\" href=\"#fn-{n}\">{n}</a></sup>"));
-        }
-        None => {
-            st.report.note(Problem::FootnoteUndefined { label: label.clone() });
-            out.push_str("<sup class=\"fnref\">?</sup>");
-        }
-    }
+    stack.push(Open {
+        end: m.end,
+        close,
+        tag,
+        san: clean.depth(),
+    });
 }

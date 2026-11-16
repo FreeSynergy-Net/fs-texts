@@ -18,7 +18,10 @@ fn check(name: &str, got: &str) {
         std::fs::write(&path, got).expect("write golden");
     }
     let want = std::fs::read_to_string(&path).unwrap_or_else(|_| panic!("missing golden {name}"));
-    assert_eq!(got, want, "golden {name} differs (UPDATE_GOLDEN=1 to rewrite, then review)");
+    assert_eq!(
+        got, want,
+        "golden {name} differs (UPDATE_GOLDEN=1 to rewrite, then review)"
+    );
 }
 
 fn fixture(name: &str) -> String {

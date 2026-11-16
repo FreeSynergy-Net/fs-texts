@@ -19,7 +19,11 @@ fn page_has_the_basics() {
     assert!(h.contains("<meta charset=\"utf-8\">") && h.contains("name=\"viewport\""));
     assert!(h.contains("<title>T \u{2013} Example Site</title>"));
     assert!(h.contains("<a class=\"skip\" href=\"#main\">Zum Inhalt springen</a>"));
-    assert_eq!(h.matches("<h1").count(), 1, "front matter title becomes the one h1: {h}");
+    assert_eq!(
+        h.matches("<h1").count(),
+        1,
+        "front matter title becomes the one h1: {h}"
+    );
     assert!(h.contains("<main id=\"main\">") && h.contains("<header>") && h.contains("<footer>"));
     assert!(h.contains("rel=\"canonical\"") && h.contains("hreflang=\"x-default\""));
     assert!(h.contains("hreflang=\"en\" href=\"https://example.test/en/guide/\""));
@@ -30,11 +34,19 @@ fn page_has_the_basics() {
 fn page_loads_nothing_from_outside_and_has_no_script() {
     let h = rendered();
     assert!(!h.to_ascii_lowercase().contains("<script"));
-    for line in h.lines().filter(|l| l.starts_with("<link rel=\"stylesheet\"") || l.contains("<img") || l.contains("<iframe")) {
-        assert!(!line.contains("://") && !line.contains("href=\"//"), "{line}");
+    for line in h.lines().filter(|l| {
+        l.starts_with("<link rel=\"stylesheet\"") || l.contains("<img") || l.contains("<iframe")
+    }) {
+        assert!(
+            !line.contains("://") && !line.contains("href=\"//"),
+            "{line}"
+        );
     }
     assert!(h.contains("default-src &#39;self&#39;") && h.contains("script-src &#39;none&#39;"));
-    assert!(!CSS.contains("@import") && !CSS.contains("url(") && !CSS.contains("http"), "style sheet loads nothing");
+    assert!(
+        !CSS.contains("@import") && !CSS.contains("url(") && !CSS.contains("http"),
+        "style sheet loads nothing"
+    );
 }
 
 #[test]
@@ -61,7 +73,11 @@ fn page_with_its_own_h1_gets_no_second_one() {
 }
 
 fn big() -> Navigation {
-    let leaf = |a: usize, b: usize, c: usize| NavNode { title: format!("Page {a}.{b}.{c}"), href: format!("/de/{a}/{b}/{c}/"), children: vec![] };
+    let leaf = |a: usize, b: usize, c: usize| NavNode {
+        title: format!("Page {a}.{b}.{c}"),
+        href: format!("/de/{a}/{b}/{c}/"),
+        children: vec![],
+    };
     let mid = |a: usize, b: usize| NavNode {
         title: format!("Section {a}.{b}"),
         href: format!("/de/{a}/{b}/"),
@@ -69,7 +85,11 @@ fn big() -> Navigation {
     };
     Navigation {
         roots: (0..20)
-            .map(|a| NavNode { title: format!("Part {a}"), href: format!("/de/{a}/"), children: (0..20).map(|b| mid(a, b)).collect() })
+            .map(|a| NavNode {
+                title: format!("Part {a}"),
+                href: format!("/de/{a}/"),
+                children: (0..20).map(|b| mid(a, b)).collect(),
+            })
             .collect(),
     }
 }
@@ -82,35 +102,66 @@ fn navigation_is_short_whatever_the_size_of_the_tree() {
         assert!(h.len() <= 20 * 1024, "{cur}: {} bytes", h.len());
     }
     let h = nav.render("/de/3/7/");
-    assert!(h.contains("Part 19") && h.contains("Part 3"), "top level is complete");
-    assert!(h.contains("Section 3.7") && h.contains("Section 3.8"), "siblings are there");
-    assert!(h.contains("Page 3.7.0") && h.contains("Page 3.7.19"), "children are there");
+    assert!(
+        h.contains("Part 19") && h.contains("Part 3"),
+        "top level is complete"
+    );
+    assert!(
+        h.contains("Section 3.7") && h.contains("Section 3.8"),
+        "siblings are there"
+    );
+    assert!(
+        h.contains("Page 3.7.0") && h.contains("Page 3.7.19"),
+        "children are there"
+    );
     assert!(!h.contains("Section 4.0"), "no other branch");
     assert!(!h.contains("Page 3.8."), "no children of siblings");
     assert_eq!(h.matches("aria-current=\"page\"").count(), 1);
     // an ancestor shows only the next step of the path, not its other children
     let h = nav.render("/de/3/7/9/");
-    assert!(h.contains("Section 3.7") && !h.contains("Section 3.8"), "{h}");
-    assert!(h.contains("Page 3.7.9") && h.contains("Page 3.7.10"), "siblings of the page");
+    assert!(
+        h.contains("Section 3.7") && !h.contains("Section 3.8"),
+        "{h}"
+    );
+    assert!(
+        h.contains("Page 3.7.9") && h.contains("Page 3.7.10"),
+        "siblings of the page"
+    );
 }
 
 #[test]
 fn trail_and_breadcrumb() {
     let nav = big();
     let t = nav.trail("/de/3/7/9/");
-    assert_eq!(t.iter().map(|x| x.0).collect::<Vec<_>>(), ["Part 3", "Section 3.7", "Page 3.7.9"]);
+    assert_eq!(
+        t.iter().map(|x| x.0).collect::<Vec<_>>(),
+        ["Part 3", "Section 3.7", "Page 3.7.9"]
+    );
     assert!(nav.trail("/de/x/").is_empty());
     let mut f = frame();
     f.nav = nav;
     f.current = "/de/3/7/".into();
     let h = render_page(&f, &page("# x"));
-    assert!(h.contains("<nav class=\"crumbs\"") && h.contains("<li aria-current=\"page\">Section 3.7</li>"), "{h}");
+    assert!(
+        h.contains("<nav class=\"crumbs\"")
+            && h.contains("<li aria-current=\"page\">Section 3.7</li>"),
+        "{h}"
+    );
 }
 
 #[test]
 fn same_input_same_bytes() {
     assert_eq!(rendered(), rendered());
-    let a = page(&std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/rich.md")).unwrap());
-    let b = page(&std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/rich.md")).unwrap());
-    assert_eq!(a.body, b.body, "ids and numbers do not depend on a clock or random ids");
+    let a = page(
+        &std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/rich.md"))
+            .unwrap(),
+    );
+    let b = page(
+        &std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/rich.md"))
+            .unwrap(),
+    );
+    assert_eq!(
+        a.body, b.body,
+        "ids and numbers do not depend on a clock or random ids"
+    );
 }

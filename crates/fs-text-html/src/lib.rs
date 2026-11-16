@@ -5,10 +5,15 @@
 //! navigation) and [`pass`] (user files copied byte for byte, behind path and media checks).
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]
+// Pedantic lints that would only add noise here: results of getters are used by callers, names
+// repeat their module on purpose, markup is written with `push_str(&format!(..))` (one short
+// line per tag), and `a`/`b`/`s` are the usual names of a range and a source string.
 #![allow(
     clippy::missing_errors_doc,
     clippy::must_use_candidate,
-    clippy::module_name_repetitions
+    clippy::module_name_repetitions,
+    clippy::format_push_string,
+    clippy::many_single_char_names
 )]
 
 pub mod escape;
@@ -26,9 +31,12 @@ pub mod theme;
 pub mod url;
 pub mod words;
 
+mod atoms;
 mod inline;
 mod leaf;
+mod rawtag;
 mod render;
+mod render_parts;
 mod table;
 mod tree;
 

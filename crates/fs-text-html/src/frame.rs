@@ -77,7 +77,10 @@ pub fn render_page(f: &Frame, page: &HtmlPage) -> String {
     attr(&f.lang, &mut o);
     o.push_str("\">\n<head>\n<meta charset=\"utf-8\">\n");
     if let Some(c) = f.csp.content() {
-        o.push_str(&format!("<meta http-equiv=\"Content-Security-Policy\" content=\"{}\">\n", attr_string(c)));
+        o.push_str(&format!(
+            "<meta http-equiv=\"Content-Security-Policy\" content=\"{}\">\n",
+            attr_string(c)
+        ));
     }
     o.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
     let title = page.title.as_deref().filter(|t| !t.is_empty());
@@ -87,21 +90,44 @@ pub fn render_page(f: &Frame, page: &HtmlPage) -> String {
     };
     o.push_str(&format!("<title>{}</title>\n", text_string(&full)));
     if let Some(d) = page.description.as_deref() {
-        o.push_str(&format!("<meta name=\"description\" content=\"{}\">\n", attr_string(d)));
+        o.push_str(&format!(
+            "<meta name=\"description\" content=\"{}\">\n",
+            attr_string(d)
+        ));
     }
     if let Some(c) = &f.canonical {
-        o.push_str(&format!("<link rel=\"canonical\" href=\"{}\">\n", attr_string(c)));
+        o.push_str(&format!(
+            "<link rel=\"canonical\" href=\"{}\">\n",
+            attr_string(c)
+        ));
     }
     for a in &f.alternates {
-        o.push_str(&format!("<link rel=\"alternate\" hreflang=\"{}\" href=\"{}\">\n", attr_string(&a.lang), attr_string(&a.href)));
+        o.push_str(&format!(
+            "<link rel=\"alternate\" hreflang=\"{}\" href=\"{}\">\n",
+            attr_string(&a.lang),
+            attr_string(&a.href)
+        ));
     }
     if let Some(x) = &f.x_default {
-        o.push_str(&format!("<link rel=\"alternate\" hreflang=\"x-default\" href=\"{}\">\n", attr_string(x)));
+        o.push_str(&format!(
+            "<link rel=\"alternate\" hreflang=\"x-default\" href=\"{}\">\n",
+            attr_string(x)
+        ));
     }
-    o.push_str(&format!("<link rel=\"stylesheet\" href=\"{}\">\n</head>\n<body>\n", attr_string(&f.stylesheet)));
-    o.push_str(&format!("<a class=\"skip\" href=\"#main\">{}</a>\n", text_string(w.skip)));
+    o.push_str(&format!(
+        "<link rel=\"stylesheet\" href=\"{}\">\n</head>\n<body>\n",
+        attr_string(&f.stylesheet)
+    ));
+    o.push_str(&format!(
+        "<a class=\"skip\" href=\"#main\">{}</a>\n",
+        text_string(w.skip)
+    ));
     header(f, &w, &mut o);
-    o.push_str(&format!("<div class=\"layout\">\n<nav class=\"side\" aria-label=\"{}\">\n{}</nav>\n", attr_string(w.nav), f.nav.render(&f.current)));
+    o.push_str(&format!(
+        "<div class=\"layout\">\n<nav class=\"side\" aria-label=\"{}\">\n{}</nav>\n",
+        attr_string(w.nav),
+        f.nav.render(&f.current)
+    ));
     o.push_str("<main id=\"main\">\n");
     crumbs(f, &w, &mut o);
     if page.top_headings == 0 {
@@ -119,11 +145,21 @@ pub fn render_page(f: &Frame, page: &HtmlPage) -> String {
 }
 
 fn header(f: &Frame, w: &Words, o: &mut String) {
-    o.push_str(&format!("<header>\n<p class=\"site\">{}</p>\n", text_string(&f.site_name)));
+    o.push_str(&format!(
+        "<header>\n<p class=\"site\">{}</p>\n",
+        text_string(&f.site_name)
+    ));
     if f.alternates.len() > 1 {
-        o.push_str(&format!("<nav class=\"langs\" aria-label=\"{}\"><ul>", attr_string(w.languages)));
+        o.push_str(&format!(
+            "<nav class=\"langs\" aria-label=\"{}\"><ul>",
+            attr_string(w.languages)
+        ));
         for a in &f.alternates {
-            let cur = if a.lang == f.lang { " aria-current=\"true\"" } else { "" };
+            let cur = if a.lang == f.lang {
+                " aria-current=\"true\""
+            } else {
+                ""
+            };
             o.push_str(&format!(
                 "<li><a href=\"{}\" hreflang=\"{}\" lang=\"{}\"{cur}>{}</a></li>",
                 attr_string(&a.href),
@@ -142,12 +178,22 @@ fn crumbs(f: &Frame, w: &Words, o: &mut String) {
     if trail.len() < 2 {
         return;
     }
-    o.push_str(&format!("<nav class=\"crumbs\" aria-label=\"{}\"><ol>", attr_string(w.breadcrumb)));
+    o.push_str(&format!(
+        "<nav class=\"crumbs\" aria-label=\"{}\"><ol>",
+        attr_string(w.breadcrumb)
+    ));
     for (i, (t, h)) in trail.iter().enumerate() {
         if i + 1 == trail.len() {
-            o.push_str(&format!("<li aria-current=\"page\">{}</li>", text_string(t)));
+            o.push_str(&format!(
+                "<li aria-current=\"page\">{}</li>",
+                text_string(t)
+            ));
         } else {
-            o.push_str(&format!("<li><a href=\"{}\">{}</a></li>", attr_string(h), text_string(t)));
+            o.push_str(&format!(
+                "<li><a href=\"{}\">{}</a></li>",
+                attr_string(h),
+                text_string(t)
+            ));
         }
     }
     o.push_str("</ol></nav>\n");

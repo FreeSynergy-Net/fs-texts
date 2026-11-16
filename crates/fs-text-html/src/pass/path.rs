@@ -27,7 +27,10 @@ impl PassPath {
         if s.len() > MAX_BYTES {
             return Err(PassError::TooLong);
         }
-        if let Some(c) = s.chars().find(|c| !(c.is_ascii_alphanumeric() || "._-/".contains(*c))) {
+        if let Some(c) = s
+            .chars()
+            .find(|c| !(c.is_ascii_alphanumeric() || "._-/".contains(*c)))
+        {
             return Err(PassError::BadChar(c));
         }
         let segs: Vec<&str> = s.split('/').collect();
