@@ -197,10 +197,10 @@ pub(crate) fn render_all(
 fn note_problem(rep: &mut BuildReport, place: &str, p: &Problem, pol: Policy) {
     let fatal = |g: Gate| g == Gate::Fail;
     match p {
-        Problem::DeadLink { path } => rep.note(
+        Problem::DeadLink { path } => rep.dead_link(
             place,
             format!("link {path:?} points to nothing (text kept, no link)"),
-            fatal(pol.dead_links),
+            pol.dead_links,
         ),
         Problem::MissingAlt { src } => rep.note(
             place,
@@ -213,5 +213,29 @@ fn note_problem(rep: &mut BuildReport, place: &str, p: &Problem, pol: Policy) {
             fatal(pol.missing_media),
         ),
         other => rep.note(place, format!("{other:?}"), false),
+    }
+}
+
+/// A folder policy that allows more than the site's (`allow_loosen = true`) is a warning.
+pub(crate) fn loosened_areas(cfg: &SiteConfig, rep: &mut BuildReport) {
+    let site = cfg
+        .csp_policy
+        .as_deref()
+        .or_else(|| fs_text_html::Csp::Strict.content())
+        .unwrap_or_default();
+    for a in &cfg.csp_areas {
+        if a.policy
+            .as_deref()
+            .is_some_and(|p| crate::csp_rel::looser(site, p))
+        {
+            rep.note(
+                "site.toml",
+                format!(
+                    "[[csp.area]] {}: its policy allows more than the policy of the site (allow_loosen = true)",
+                    a.path.as_url()
+                ),
+                false,
+            );
+        }
     }
 }

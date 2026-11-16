@@ -5,11 +5,15 @@
 //! (`write`) writes the output (new files only) and the manifest, and fixes modes and times. A
 //! failed phase 2 removes what this run wrote.
 
+use crate::anchors::check_anchors;
+use crate::config::DeadLinks;
 use crate::error::SiteError;
+use crate::folders;
 use crate::index::SiteIndex;
 use crate::outfs::Out;
+use crate::prepare::loosened_areas;
 use crate::prepare::{check_pass, register_media, render_all};
-use crate::report::{BuildReport, Policy};
+use crate::report::{BuildReport, Gate, Policy};
 use crate::source::{PageEntry, SiteSource};
 use crate::words::SiteWords;
 use crate::write::Writer;
@@ -76,6 +80,7 @@ pub fn build(
     let mut index = SiteIndex {
         prefix: prefix.clone(),
         default_lang: Some(cfg.default_language.clone()),
+        other_sites: opt.nested.clone(),
         ..SiteIndex::default()
     };
     register_media(src, &media.items, limits, &mut index, &mut rep);
@@ -106,8 +111,27 @@ pub fn build(
             );
         }
     }
+    if cfg.build.folder_index {
+        for l in &cfg.languages {
+            let have = entries
+                .iter()
+                .filter(|e| &e.lang == l)
+                .map(|e| e.path.clone());
+            for f in folders::missing(&have.collect()) {
+                index.pages.entry((l.clone(), f)).or_insert(usize::MAX);
+            }
+        }
+    }
     let index = Arc::new(index);
+    // `[build] dead_links = "list"` turns the stop into a warning; the list stays complete.
+    let mut opt = opt.clone();
+    if cfg.build.dead_links == DeadLinks::List {
+        opt.policy.dead_links = Gate::Warn;
+    }
+    let opt = &opt;
     let rendered = render_all(entries, &index, opt, &mut rep);
+    check_anchors(&rendered, &index, opt.policy.dead_links, &mut rep);
+    loosened_areas(cfg, &mut rep);
     if rep.has_fatal() {
         return Err(SiteError::Problems(
             rep.findings

@@ -91,7 +91,12 @@ pub fn not_found_body(cfg: &SiteConfig) -> String {
 /// `site-manifest.json`: every other file with path, SHA-256, size, media type and kind; a
 /// passed-through file also says whether it is active. Keys and files are sorted.
 #[must_use]
-pub fn manifest(cfg: &SiteConfig, revision: Option<&str>, ledger: &[Entry]) -> String {
+pub fn manifest(
+    cfg: &SiteConfig,
+    revision: Option<&str>,
+    ledger: &[Entry],
+    dead_links: usize,
+) -> String {
     let mut files: Vec<&Entry> = ledger.iter().collect();
     files.sort_by(|a, b| a.path.cmp(&b.path));
     let list: Vec<Value> = files
@@ -119,6 +124,7 @@ pub fn manifest(cfg: &SiteConfig, revision: Option<&str>, ledger: &[Entry]) -> S
         "path_prefix": cfg.url_prefix(),
         "languages": langs,
         "source_revision": revision,
+        "dead_links": dead_links,
         "files": list,
     });
     let mut s = serde_json::to_string_pretty(&v).unwrap_or_default();

@@ -28,7 +28,7 @@ pub struct Policy {
 impl Default for Policy {
     fn default() -> Self {
         Self {
-            dead_links: Gate::Warn,
+            dead_links: Gate::Fail,
             missing_alt: Gate::Warn,
             missing_media: Gate::Fail,
         }
@@ -55,6 +55,8 @@ pub struct BuildReport {
     pub pages: usize,
     /// Files in the manifest.
     pub files: usize,
+    /// Links to a page, file or anchor of the site that does not exist (counted whatever the gate).
+    pub dead_links: usize,
     /// SHA-256 of `site-manifest.json` (the manifest names every other file by hash).
     pub manifest_sha256: String,
 }
@@ -67,6 +69,12 @@ impl BuildReport {
             message: message.into(),
             fatal,
         });
+    }
+
+    /// A link to nothing: counted, and a stop if the gate says so.
+    pub fn dead_link(&mut self, place: &str, message: impl Into<String>, gate: Gate) {
+        self.dead_links += 1;
+        self.note(place, message, gate == Gate::Fail);
     }
 
     /// Is there a finding that stops the build?
@@ -90,8 +98,8 @@ impl BuildReport {
         }
         let _ = writeln!(
             o,
-            "{} pages, {} files, manifest sha256 {}",
-            self.pages, self.files, self.manifest_sha256
+            "{} pages, {} files, {} dead links, manifest sha256 {}",
+            self.pages, self.files, self.dead_links, self.manifest_sha256
         );
         o
     }

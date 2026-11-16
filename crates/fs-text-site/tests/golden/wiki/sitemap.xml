@@ -15,6 +15,13 @@
 <url>
 <loc>https://example.test/wiki/de/guide/</loc>
 <xhtml:link rel="alternate" hreflang="de" href="https://example.test/wiki/de/guide/"/>
+<xhtml:link rel="alternate" hreflang="en" href="https://example.test/wiki/en/guide/"/>
+<xhtml:link rel="alternate" hreflang="x-default" href="https://example.test/wiki/"/>
+</url>
+<url>
+<loc>https://example.test/wiki/en/guide/</loc>
+<xhtml:link rel="alternate" hreflang="de" href="https://example.test/wiki/de/guide/"/>
+<xhtml:link rel="alternate" hreflang="en" href="https://example.test/wiki/en/guide/"/>
 <xhtml:link rel="alternate" hreflang="x-default" href="https://example.test/wiki/"/>
 </url>
 <url>

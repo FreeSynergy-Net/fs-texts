@@ -4,9 +4,10 @@
 //! Pattern: Builder input. [`crate::config::SiteConfig`] is made from these; nothing outside
 //! reads them.
 
-use crate::config::{CspArea, CspMode, DnsRecord};
+use crate::config::{BuildRules, CspArea, CspMode, DeadLinks, DnsRecord};
 use crate::error::ConfigError;
 use crate::host::PathPrefix;
+use fs_text_html::Csp;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -34,6 +35,14 @@ pub(crate) struct RawArea {
     pub(crate) path: String,
     pub(crate) mode: Option<String>,
     pub(crate) policy: Option<String>,
+    pub(crate) allow_loosen: Option<bool>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RawBuild {
+    pub(crate) dead_links: Option<String>,
+    pub(crate) folder_index: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -65,6 +74,7 @@ pub(crate) struct Raw {
     pub(crate) dns: Option<RawDns>,
     pub(crate) acme: RawAcme,
     pub(crate) csp: Option<RawCsp>,
+    pub(crate) build: Option<RawBuild>,
 }
 
 pub(crate) fn dns_records(d: Option<RawDns>) -> Result<Vec<DnsRecord>, ConfigError> {
@@ -136,6 +146,16 @@ pub(crate) fn csp(
                 ));
             }
             policy_ok(a.policy.as_ref())?;
+            let loosen = a.allow_loosen.unwrap_or(false);
+            if let Some(ap) = &a.policy {
+                let site = c.policy.as_deref().or_else(|| Csp::Strict.content());
+                if !loosen && site.is_some_and(|sp| crate::csp_rel::looser(sp, ap)) {
+                    return Err(ConfigError::CspMode(format!(
+                        "area {}: the policy allows more than the policy of the site (add allow_loosen = true to say so)",
+                        a.path
+                    )));
+                }
+            }
             if areas.iter().any(|x| x.path == path) {
                 return Err(ConfigError::CspMode(format!("area {} twice", a.path)));
             }
@@ -143,9 +163,32 @@ pub(crate) fn csp(
                 path,
                 mode: mode_of(a.mode.as_deref())?,
                 policy: a.policy,
+                allow_loosen: loosen,
             });
         }
         areas.sort_by(|a, b| a.path.cmp(&b.path));
     }
     Ok((mode, c.policy, areas))
+}
+
+pub(crate) fn build_rules(b: Option<RawBuild>, v1: bool) -> Result<BuildRules, ConfigError> {
+    let Some(b) = b else {
+        return Ok(BuildRules::default());
+    };
+    if v1 {
+        return Err(ConfigError::BuildRules("[build] needs schema = 2".into()));
+    }
+    let dead_links = match b.dead_links.as_deref() {
+        None | Some("error") => DeadLinks::Error,
+        Some("list") => DeadLinks::List,
+        Some(_) => {
+            return Err(ConfigError::BuildRules(
+                "dead_links is \"error\" or \"list\"".into(),
+            ))
+        }
+    };
+    Ok(BuildRules {
+        dead_links,
+        folder_index: b.folder_index.unwrap_or(true),
+    })
 }

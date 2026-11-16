@@ -8,7 +8,8 @@
 use crate::error::ConfigError;
 use crate::host::{Host, PathPrefix};
 pub use crate::lang::Lang;
-use crate::raw::{csp, dns_records, Raw, RawSite};
+use crate::raw::{build_rules, csp, dns_records, Raw, RawSite};
+pub use crate::rules::{BuildRules, DeadLinks};
 
 const MAX_BYTES: usize = 8 * 1024;
 const MAX_NAMES: usize = 10;
@@ -51,8 +52,10 @@ pub struct CspArea {
     pub path: PathPrefix,
     /// What files there may do.
     pub mode: CspMode,
-    /// A complete policy for this folder.
+    /// A complete policy for the generated pages of this folder (`<lang>/<folder>/...`).
     pub policy: Option<String>,
+    /// The policy may allow more than the site's (`allow_loosen = true`); the build warns.
+    pub allow_loosen: bool,
 }
 
 /// A checked site description.
@@ -83,6 +86,8 @@ pub struct SiteConfig {
     pub csp_policy: Option<String>,
     /// Rules of single folders; the longest matching folder wins, else `csp_mode`.
     pub csp_areas: Vec<CspArea>,
+    /// `[build]`.
+    pub build: BuildRules,
 }
 
 impl SiteConfig {
@@ -163,6 +168,7 @@ impl SiteConfig {
             csp_mode,
             csp_policy,
             csp_areas,
+            build: build_rules(raw.build, v1)?,
         };
         if let Some(s) = raw.site {
             cfg.apply_site(s)?;

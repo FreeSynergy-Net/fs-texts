@@ -19,3 +19,6 @@ method = "http-01"
 
 [csp]
 mode = "passthrough"
+
+[build]
+dead_links = "list"   # the fixture keeps one dead link on purpose

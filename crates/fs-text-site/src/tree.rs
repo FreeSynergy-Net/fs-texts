@@ -155,3 +155,15 @@ pub fn render_full(nav: &Navigation) -> String {
     list(&nav.roots, &mut o);
     o
 }
+
+/// The entry with the address `href` somewhere in `nodes`.
+#[must_use]
+pub fn find<'a>(nodes: &'a [NavNode], href: &str) -> Option<&'a NavNode> {
+    nodes.iter().find_map(|n| {
+        if n.href == href {
+            Some(n)
+        } else {
+            find(&n.children, href)
+        }
+    })
+}

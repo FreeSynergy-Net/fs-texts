@@ -50,6 +50,8 @@ pub enum ConfigError {
     CspMode(String),
     /// `csp.policy` breaks the rule.
     CspPolicy,
+    /// `[build]` breaks the rule.
+    BuildRules(String),
     /// Two sites claim the same host and path.
     SiteCollision {
         /// First site.
@@ -90,6 +92,7 @@ impl fmt::Display for ConfigError {
             Self::DnsRecords(m) => write!(f, "dns.records: {m}"),
             Self::AcmeMethod(m) => write!(f, "acme.method: {m}"),
             Self::CspMode(m) => write!(f, "csp.mode: {m}"),
+            Self::BuildRules(m) => write!(f, "build: {m}"),
             Self::CspPolicy => write!(
                 f,
                 "csp.policy: 1 to 1000 characters of A-Za-z0-9 ;:'*._/=+,%-"

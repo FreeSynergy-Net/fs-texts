@@ -13,6 +13,8 @@ pub struct SiteWords {
     pub sitemap: &'static str,
     /// Label of the hint where the navigation was cut.
     pub more: &'static str,
+    /// Label of an overview page the builder made for a folder.
+    pub folder_auto: &'static str,
     /// Title of the page "not found".
     pub not_found: &'static str,
     /// Text of the page "not found".
@@ -26,6 +28,7 @@ pub struct SiteWords {
 const DE: SiteWords = SiteWords {
     contents_slug: "inhalt",
     contents: "Inhalt",
+    folder_auto: "Automatisch erzeugte Übersicht dieses Ordners.",
     sitemap: "Sitemap",
     more: "mehr …",
     not_found: "Seite nicht gefunden",
@@ -37,6 +40,7 @@ const DE: SiteWords = SiteWords {
 const EN: SiteWords = SiteWords {
     contents_slug: "contents",
     contents: "Contents",
+    folder_auto: "Automatically generated overview of this folder.",
     sitemap: "Sitemap",
     more: "more …",
     not_found: "Page not found",

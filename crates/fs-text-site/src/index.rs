@@ -36,6 +36,9 @@ pub struct SiteIndex {
     pub default_lang: Option<Lang>,
     /// `(lang, address segments)` of every page.
     pub pages: BTreeMap<(Lang, Vec<String>), usize>,
+    /// First segments below the site at which other sites of the same host lie: an absolute
+    /// link into one of them is a link to that site, not a dead one.
+    pub other_sites: Vec<String>,
     /// `(lang, path below the language)` of every media file.
     pub media: BTreeMap<(Lang, String), MediaRef>,
 }
@@ -151,6 +154,12 @@ impl LinkResolver for PageLinks {
         }
         if has_scheme(p) {
             return LinkTarget::Href(p.to_string());
+        }
+        if let Some(rest) = p.strip_prefix('/') {
+            let first = rest.split('/').next().unwrap_or_default();
+            if self.index.other_sites.iter().any(|s| s == first) {
+                return LinkTarget::Href(format!("{}{p}", self.index.prefix));
+            }
         }
         if let Some(u) = self.index.find_page(&self.lang, &self.dir, link) {
             return LinkTarget::Href(u);

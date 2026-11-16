@@ -7,11 +7,13 @@
 use crate::build::BuildOptions;
 use crate::config::{Lang, SiteConfig};
 use crate::error::SiteError;
+use crate::folders;
 use crate::gen;
 use crate::index::{page_url, SiteIndex};
 use crate::outfs::{hex, Kind, Out};
 use crate::prepare::Rendered;
 use crate::report::BuildReport;
+use crate::rules;
 use crate::source::{FileEntry, SiteSource};
 use crate::tree::{build as build_tree, render_full, TreePage};
 use crate::words::SiteWords;
@@ -21,6 +23,12 @@ use fs_text_html::{render_page, Alternate, Csp, Frame, HtmlPage, NavNode, Naviga
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
+
+pub(crate) fn site_csp(cfg: &SiteConfig) -> Csp {
+    cfg.csp_policy
+        .as_ref()
+        .map_or(Csp::Strict, |p| Csp::Custom(p.clone()))
+}
 
 pub(crate) fn problem(e: impl std::fmt::Display) -> SiteError {
     SiteError::Problems(vec![e.to_string()])
@@ -58,6 +66,18 @@ impl<'a> Writer<'a> {
                 .or_default()
                 .push(r.entry.lang.clone());
         }
+        if cfg.build.folder_index {
+            for l in &cfg.languages {
+                let have: BTreeSet<Vec<String>> = rendered
+                    .iter()
+                    .filter(|r| &r.entry.lang == l)
+                    .map(|r| r.entry.path.clone())
+                    .collect();
+                for f in folders::missing(&have) {
+                    by_path.entry(f).or_default().push(l.clone());
+                }
+            }
+        }
         Self {
             src,
             cfg,
@@ -68,10 +88,7 @@ impl<'a> Writer<'a> {
             prefix: cfg.url_prefix(),
             origin: cfg.origin(),
             css_url: String::new(),
-            csp: cfg
-                .csp_policy
-                .as_ref()
-                .map_or(Csp::Strict, |p| Csp::Custom(p.clone())),
+            csp: site_csp(cfg),
             by_path,
             supplied: BTreeSet::new(),
         }
@@ -94,7 +111,12 @@ impl<'a> Writer<'a> {
             }
         }
         self.site_files(&starts)?;
-        let m = gen::manifest(self.cfg, self.src.revision(), &self.out.ledger);
+        let m = gen::manifest(
+            self.cfg,
+            self.src.revision(),
+            &self.out.ledger,
+            rep.dead_links,
+        );
         rep.files = self.out.ledger.len();
         rep.manifest_sha256 = hex(&Sha256::digest(m.as_bytes()));
         self.out.put(
@@ -106,7 +128,7 @@ impl<'a> Writer<'a> {
         self.out.finish(opt.mtime)
     }
 
-    fn abs(&self, lang: &Lang, path: &[String]) -> String {
+    pub(crate) fn abs(&self, lang: &Lang, path: &[String]) -> String {
         format!(
             "https://{}{}",
             self.cfg.host.as_str(),
@@ -127,6 +149,12 @@ impl<'a> Writer<'a> {
             current: String::new(),
             footer: None,
         }
+    }
+
+    /// The policy written into the page at `path`: the one of its folder rule, else the site's.
+    pub(crate) fn csp_for(&self, path: &[String]) -> Csp {
+        rules::area_policy(self.cfg, path)
+            .map_or_else(|| self.csp.clone(), |p| Csp::Custom(p.to_string()))
     }
 
     fn title_of(&self, r: &Rendered) -> String {
@@ -160,7 +188,7 @@ impl<'a> Writer<'a> {
             return Ok(None);
         }
         let w = SiteWords::for_lang(lang.as_str());
-        let tree_pages: Vec<TreePage> = mine
+        let mut tree_pages: Vec<TreePage> = mine
             .iter()
             .map(|r| TreePage {
                 path: r.entry.path.clone(),
@@ -168,6 +196,16 @@ impl<'a> Writer<'a> {
                 order: r.entry.order,
             })
             .collect();
+        let folders = if self.cfg.build.folder_index {
+            folders::missing(&mine.iter().map(|r| r.entry.path.clone()).collect())
+        } else {
+            BTreeSet::new()
+        };
+        tree_pages.extend(folders.iter().map(|f| TreePage {
+            path: f.clone(),
+            title: f.last().cloned().unwrap_or_default(),
+            order: u32::MAX,
+        }));
         let contents_path = vec![w.contents_slug.to_string()];
         let contents_url = page_url(&self.prefix, lang, &contents_path);
         // Contents page and sitemap are on every page, outside the navigation budget.
@@ -193,6 +231,7 @@ impl<'a> Writer<'a> {
             page.title = Some(self.title_of(r));
             frame.current = page_url(&self.prefix, lang, &r.entry.path);
             frame.canonical = Some(self.abs(lang, &r.entry.path));
+            frame.csp = self.csp_for(&r.entry.path);
             frame.alternates = self.by_path[&r.entry.path]
                 .iter()
                 .map(|l| Alternate {
@@ -202,6 +241,8 @@ impl<'a> Writer<'a> {
                 .collect();
             put_page(self.out, lang, &r.entry.path, &render_page(&frame, &page))?;
         }
+        self.folder_pages(lang, &folders, &core, &mut frame)?;
+        frame.csp = self.csp.clone();
         let page = HtmlPage {
             body: render_full(&core),
             title: Some(w.contents.to_string()),
@@ -226,7 +267,7 @@ impl<'a> Writer<'a> {
             })
             .collect();
         put_page(self.out, lang, &contents_path, &render_page(&frame, &page))?;
-        rep.pages += mine.len() + 1;
+        rep.pages += mine.len() + folders.len() + 1;
         if mine.iter().any(|r| r.entry.path.is_empty()) {
             Ok(Some(page_url(&self.prefix, lang, &[])))
         } else {

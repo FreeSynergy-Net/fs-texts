@@ -1,4 +1,5 @@
 {
+  "dead_links": 0,
   "files": [
     {
       "bytes": 928,
@@ -36,11 +37,11 @@
       "sha256": "e808aa36341838ed348553e74c13b79a17f605ad21b015a5d1809131327390e0"
     },
     {
-      "bytes": 1493,
+      "bytes": 1830,
       "kind": "page",
       "media": "text/html",
       "path": "de/guide/index.html",
-      "sha256": "1a439f47b6a16500e2babc2e4583a2b1f2a6d6b8f710297da0b090cb52773504"
+      "sha256": "5d30f8d7c2fbd8b43ecbea6f60a2c0144c58263ec9ebe6bb1c65654b4fb9f3e1"
     },
     {
       "bytes": 1674,
@@ -64,25 +65,32 @@
       "sha256": "37eb1bcb6e676783bbec8beee8f34cd9d6424c7ebd51c6b1563c491e56a60792"
     },
     {
-      "bytes": 1627,
+      "bytes": 1669,
       "kind": "page",
       "media": "text/html",
       "path": "en/contents/index.html",
-      "sha256": "2152ed99ca8b456686af2479ac8bc39e015948d5bbb2953ab4df9526b6cafa6e"
+      "sha256": "72cc4b557072141ef5166f092c140b1f458c354adc4c6ca3894e815df403895c"
     },
     {
-      "bytes": 1225,
+      "bytes": 1707,
+      "kind": "page",
+      "media": "text/html",
+      "path": "en/guide/index.html",
+      "sha256": "8ac25a2efae590b25b4f65a0193eb181312fa4872d1a4371f4d212b72047b472"
+    },
+    {
+      "bytes": 1433,
       "kind": "page",
       "media": "text/html",
       "path": "en/guide/only-en/index.html",
-      "sha256": "0025370b2dcf15b5ea7f701dfb00ee51474d3c1da18342e429b0b88f155d6af6"
+      "sha256": "36cac8e6be19f5fa6e8674ce2e4fda1a1d96e37d7f787e7dfc09d1bd11619207"
     },
     {
-      "bytes": 1494,
+      "bytes": 1479,
       "kind": "page",
       "media": "text/html",
       "path": "en/index.html",
-      "sha256": "05316f5887479152ac3b28cdcbc88b3960743f63dfc5babafdb2eef6f8562475"
+      "sha256": "7945ed62982c543992ba034c1ba31097cb9b731206f45e5e1ac54d957fd2a990"
     },
     {
       "bytes": 983,
@@ -99,11 +107,11 @@
       "sha256": "8178ba90e45c0a4f1fd702d4ec4df20c38241d1fc90188f9166301ad5d0ec1b0"
     },
     {
-      "bytes": 1981,
+      "bytes": 2387,
       "kind": "generated",
       "media": "text/xml",
       "path": "sitemap.xml",
-      "sha256": "5d678bda4c023980c4f7a48ecbbe0c8c822b5daa30307f6af96099d4273818b0"
+      "sha256": "7e776e8d070631273f845a32ef63428cfb64715006e3e0f40a1ca67b0d9e0853"
     }
   ],
   "host": "example.test",

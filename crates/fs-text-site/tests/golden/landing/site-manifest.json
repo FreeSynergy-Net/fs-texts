@@ -1,4 +1,5 @@
 {
+  "dead_links": 1,
   "files": [
     {
       "active": false,
@@ -46,11 +47,11 @@
       "sha256": "e41e1b52a82694724e37695da9226eda06a980194d0823838b4111375cd58bcd"
     },
     {
-      "bytes": 1557,
+      "bytes": 1581,
       "kind": "page",
       "media": "text/html",
       "path": "de/index.html",
-      "sha256": "6e4f39578a8602b140d2c081c22b8bf8d0a3a3df03b9e6811f31da02b91d57ef"
+      "sha256": "7de1e8c5b1c1ec46aa3e301b0e73d9dda670f82c996c26319442bbb0e0a90a08"
     },
     {
       "bytes": 1548,
