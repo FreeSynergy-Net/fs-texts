@@ -81,6 +81,7 @@ pub fn window_linked(
         .lock()
         .unwrap_or_else(PoisonError::into_inner) = switcher.list_now();
     switcher.watch_saves();
+    switcher.set_empty_state();
     switcher.install(shown)?;
     // Locked for a reason: the window says it in the status line too, not only in the grey entries.
     if let Some(why) = switcher

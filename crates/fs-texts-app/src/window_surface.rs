@@ -14,6 +14,7 @@ use fs_components_widgets::icon::{Glyph, Tone, icon};
 use fs_components_workbenches::{ReaderWidget, styles};
 
 use crate::frontend::Frontend;
+use crate::window_empty::{EmptyWords, OnNew, empty_view};
 use crate::window_modal::{self, ModalSlot};
 
 /// The editor takes the whole width of its column (the layouts of `fs-components` give it a page padding of 40 px and the
@@ -35,6 +36,8 @@ pub(crate) struct ReaderSurface {
     pub(crate) widget: Mutex<ReaderWidget>,
     pub(crate) modal: Arc<ModalSlot>,
     pub(crate) confluence: AtomicBool,
+    /// What the window says while the wiki has no page, and what its button does; none = the reader's layout always.
+    pub(crate) empty: Mutex<Option<(Arc<dyn Fn() -> EmptyWords + Send + Sync>, OnNew)>>,
     program: String,
     search: SearchField,
 }
@@ -59,6 +62,7 @@ impl ReaderSurface {
             widget: Mutex::new(widget),
             modal: Arc::new(ModalSlot::default()),
             confluence: AtomicBool::new(shown == Frontend::Confluence),
+            empty: Mutex::default(),
             program: program.to_owned(),
             search,
         }
@@ -74,7 +78,19 @@ impl ReaderSurface {
 
 impl Surface for ReaderSurface {
     fn build(&self, width: f32, height: f32) -> Box<dyn Element> {
-        Box::new(self.current().build(width, height))
+        let widget = self.current();
+        let none_at_all = widget.with_reader(|r| {
+            r.entries().is_empty() && r.current_path().is_none() && r.editing().is_none()
+        });
+        let empty = self
+            .empty
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
+        if none_at_all && let Some((words, on_new)) = empty {
+            return Box::new(empty_view(&words(), &on_new, width, height));
+        }
+        Box::new(widget.build(width, height))
     }
 
     fn styles(&self) -> String {

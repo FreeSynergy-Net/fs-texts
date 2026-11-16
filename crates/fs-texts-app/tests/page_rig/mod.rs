@@ -63,13 +63,22 @@ pub fn rig(german: bool) -> Rig {
 
 /// The same rig with the window in another frontend.
 pub fn rig_in(german: bool, frontend: Frontend) -> Rig {
+    rig_with(
+        german,
+        frontend,
+        &[
+            ("handbook.md", "# Handbook\n\nThe handbook.\n"),
+            ("handbook/chapter-one.md", "# Chapter one\n\nFirst.\n"),
+            ("notes.md", "# Notes\n\nA note.\n"),
+        ],
+    )
+}
+
+/// The same rig over a wiki that holds exactly `pages` (none = an empty wiki).
+pub fn rig_with(german: bool, frontend: Frontend, pages: &[(&str, &str)]) -> Rig {
     let (rt, fixture) = common::wiki();
     let wiki = fixture.wiki().texts();
-    for (path, text) in [
-        ("handbook.md", "# Handbook\n\nThe handbook.\n"),
-        ("handbook/chapter-one.md", "# Chapter one\n\nFirst.\n"),
-        ("notes.md", "# Notes\n\nA note.\n"),
-    ] {
+    for (path, text) in pages {
         rt.block_on(wiki.create(path, text)).unwrap();
     }
     let source = Arc::new(WikiSource::new(

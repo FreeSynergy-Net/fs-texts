@@ -48,6 +48,7 @@ pub mod task_ops;
 pub mod ui_texts;
 pub mod variants;
 pub mod wiki;
+mod window_empty;
 pub mod window_link;
 mod window_make;
 pub mod window_menu;

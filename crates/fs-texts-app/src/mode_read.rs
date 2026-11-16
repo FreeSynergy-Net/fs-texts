@@ -172,8 +172,12 @@ fn show(
     let link = crate::server::socket_path(args.socket.as_deref())
         .ok()
         .map(|socket| crate::mode_link::link(args, &socket, asks));
-    let (app, _) = window_linked("FreeSynergy Texts", reader, shown, setup, link)
-        .map_err(|e| e.to_string())?;
+    // The title follows the facet ("FreeSynergy Wiki" for `--facet wiki`), as the status line and the problem window do.
+    let title = format!(
+        "FreeSynergy {}",
+        crate::ui_texts::UiTexts::new(german).program_name(args.facet.as_deref())
+    );
+    let (app, _) = window_linked(&title, reader, shown, setup, link).map_err(|e| e.to_string())?;
     launch(WindowOptions::default(), app).map_err(|e| e.to_string())
 }
 

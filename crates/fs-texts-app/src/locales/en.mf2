@@ -110,6 +110,8 @@ problem-failed = The start failed: {$error}.
 
 name-program = Texts
 name-facet-wiki = Wiki
+empty-title = No pages yet.
+empty-hint = Make the first page.
 reason-empty = Choose a page in the tree or make a new one (menu Page > New page).
 reason-lost = server not reachable (choose "Reconnect" in the window)
 link-lost-title = Connection to the server lost
