@@ -141,24 +141,24 @@ fn u4_u5_u6_nothing_is_cut_and_the_way_starts_with_the_text() {
     // Full width: the text begins beside the sidebar again, the way with it.
     r.reader.set_full_width(true);
     let w = shoot(&r, 1900, 900, &dir, "u6-volle-breite-1900.png");
-    let (wway, wtitle) = (
+    let (full_way, full_title) = (
         left_ink(&w, 280, 55, 78).unwrap(),
         left_ink(&w, 280, 250, 292).unwrap(),
     );
-    assert!(wtitle < 400, "full width: title at x {wtitle}");
+    assert!(full_title < 400, "full width: title at x {full_title}");
     assert!(
-        wway.abs_diff(wtitle) <= 4,
-        "full width: way {wway}, title {wtitle}"
+        full_way.abs_diff(full_title) <= 4,
+        "full width: way {full_way}, title {full_title}"
     );
     r.reader.set_full_width(false);
     let n = shoot(&r, 1300, 800, &dir, "u6-breite-1300.png");
-    let (nway, ntitle) = (
+    let (narrow_way, narrow_title) = (
         left_ink(&n, 280, 55, 78).unwrap(),
         left_ink(&n, 280, 250, 292).unwrap(),
     );
     assert!(
-        nway.abs_diff(ntitle) <= 4,
-        "1300 px: way {nway}, title {ntitle}"
+        narrow_way.abs_diff(narrow_title) <= 4,
+        "1300 px: way {narrow_way}, title {narrow_title}"
     );
 }
 

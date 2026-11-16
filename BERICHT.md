@@ -1,7 +1,7 @@
 # BERICHT wiki-0013 (fs-wiki 0.0.13), Abnahme U1-U8 gegen fs-components 0.0.20
 
 ## Stand
-- Pin in `crates/fs-wiki-app/Cargo.toml`: `tag = "v0.0.20"` (Tag existiert noch nicht). Geprüft wurde gegen Commit 6c13308 (editor-fixes, Zweig unreviewed/editor-0020) über einen lokalen Pfad-Austausch der Abhängigkeiten (nicht committet; saubere Kopie mit `git archive` nach /srv/FreeSynergy/.scratch/comp-6c13308). Cargo.lock ist deshalb NICHT neu aufgelöst (nur fs-wiki-Versionen 0.0.13); nach dem Tag: `cargo update -p fs-components` bzw. Lock neu, dann CI.
+- Pin in `crates/fs-wiki-app/Cargo.toml`: `tag = "v0.0.20"` (Tag existiert noch nicht). Geprüft wurde (neu) gegen Commit 3d25106 (editor-fixes; Bilder neu erzeugt), vorher 6c13308 (editor-fixes, Zweig unreviewed/editor-0020) über einen lokalen Pfad-Austausch der Abhängigkeiten (nicht committet; saubere Kopie mit `git archive` nach /srv/FreeSynergy/.scratch/comp-6c13308). Cargo.lock ist deshalb NICHT neu aufgelöst (nur fs-wiki-Versionen 0.0.13); nach dem Tag: `cargo update -p fs-components` bzw. Lock neu, dann CI.
 - Gates lokal gegen 6c13308: fmt ok, clippy -D warnings ok, `cargo test --workspace --all-features --locked` ok (alle).
 
 ## Abnahme (Bilder: /srv/FreeSynergy/.scratch/wiki-0013-bilder/, Test tests/window_acceptance.rs, Notion-Frontend, Fensterstile, Seite des Nutzers)
