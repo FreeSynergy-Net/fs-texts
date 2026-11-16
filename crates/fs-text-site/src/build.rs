@@ -176,12 +176,17 @@ pub fn build_all(
     let set = crate::sites::SiteSet::new(sources.iter().map(|s| s.config().clone()).collect())
         .map_err(SiteError::Config)?;
     let mut out = Vec::new();
+    let made_root = !out_root.exists();
     for s in &sources {
         let mut o = opt.clone();
         o.nested = set.nested_below(s.config());
         let id = set.out_name(s.config());
         let r = build(s, &out_root.join(&id), &o)?;
         out.push((id, r));
+    }
+    // the folder that holds the sites was made by the build: its time is the release time too
+    if made_root {
+        std::fs::File::open(out_root)?.set_modified(opt.mtime)?;
     }
     Ok(out)
 }

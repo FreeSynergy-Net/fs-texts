@@ -178,3 +178,20 @@ fn legacy_schema_1_site_builds_with_defaults() {
         &["en/index.html", "site.toml"],
     );
 }
+
+#[test]
+fn the_outer_output_folder_has_the_release_time_too() {
+    use std::os::unix::fs::MetadataExt;
+    let t = tempfile::tempdir().unwrap();
+    let out = t.path().join("a/out");
+    fs::create_dir_all(t.path().join("a")).unwrap();
+    build_multi(&out);
+    assert_eq!(fs::metadata(&out).unwrap().mtime(), 1_700_000_000);
+    // a folder that was there before is not ours to touch
+    let there = t.path().join("there");
+    fs::create_dir(&there).unwrap();
+    let before = fs::metadata(&there).unwrap().mtime();
+    build_all(&fixtures().join("multi"), &there, &opts()).unwrap();
+    assert_ne!(before, 1_700_000_000);
+    assert_ne!(fs::metadata(&there).unwrap().mtime(), 1_700_000_000);
+}

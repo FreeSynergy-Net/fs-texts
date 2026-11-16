@@ -14,7 +14,7 @@
 use crate::config::{Lang, SiteConfig};
 use crate::error::SiteError;
 use crate::source::{Area, FileEntry, Listing, PageEntry, SiteSource};
-use crate::walk::{is_md, pages_order, read_small, url_segment_ok, walk, Walk};
+use crate::walk::{is_md, pages_order, read_small, suggest_segment, url_segment_ok, walk, Walk};
 use fs_text::import_markdown;
 use fs_text_html::pass::{open_plain, PassError, PassPath};
 use std::collections::BTreeMap;
@@ -82,6 +82,24 @@ impl FolderSource {
         problems: &mut Vec<String>,
     ) -> Option<PageEntry> {
         let origin = format!("{}/{}/{rel}", self.content, lang.as_str());
+        let segs: Vec<&str> = rel.split('/').collect();
+        // one message for every bad address part, with a name that would do
+        let last = segs.len() - 1;
+        let bad = segs.iter().enumerate().find_map(|(i, s)| {
+            let part = if i == last {
+                s.strip_suffix(".md").unwrap_or(s)
+            } else {
+                s
+            };
+            (!url_segment_ok(part)).then_some(part)
+        });
+        if let Some(bad) = bad {
+            problems.push(format!(
+                "{origin}: address part {bad:?} must be lower case a-z 0-9 . _ - (nothing is renamed silently; for example {:?})",
+                suggest_segment(bad)
+            ));
+            return None;
+        }
         let path = match PassPath::parse(rel) {
             Ok(p) => p,
             Err(e) => {
@@ -89,19 +107,12 @@ impl FolderSource {
                 return None;
             }
         };
-        let segs: Vec<&str> = rel.split('/').collect();
         let (dirs, file) = segs.split_at(segs.len() - 1);
         let stem = file[0].strip_suffix(".md").unwrap_or(file[0]);
         let mut url: Vec<String> = dirs.iter().map(|s| (*s).to_string()).collect();
         let is_index = stem == "index";
         if !is_index {
             url.push(stem.to_string());
-        }
-        if let Some(bad) = url.iter().find(|s| !url_segment_ok(s)) {
-            problems.push(format!(
-                "{origin}: address part {bad:?} must be lower case a-z 0-9 . _ - (nothing is renamed silently)"
-            ));
-            return None;
         }
         let order = if url.is_empty() {
             0

@@ -34,8 +34,15 @@ pub(crate) fn walk(base: &Path, rel: &str, depth: usize, w: &mut Walk) {
     } else {
         base.join(rel)
     };
-    let Ok(rd) = fs::read_dir(&dir) else {
-        return;
+    let rd = match fs::read_dir(&dir) {
+        Ok(rd) => rd,
+        // a part that is not there (no `files/`) is no problem; one that cannot be read is
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return,
+        Err(e) => {
+            w.problems
+                .push(format!("{}: cannot be read: {e}", dir.display()));
+            return;
+        }
     };
     let mut names: Vec<String> = Vec::new();
     for e in rd.flatten() {
@@ -106,4 +113,28 @@ pub(crate) fn pages_order(text: &str) -> Vec<String> {
         }
     }
     out
+}
+
+/// A name that follows the address rule and is close to `s` (`Über uns` gives `ueber-uns`):
+/// only a suggestion for the message, nothing is renamed.
+pub(crate) fn suggest_segment(s: &str) -> String {
+    let mut o = String::new();
+    for c in s.chars() {
+        match c {
+            'ä' | 'Ä' => o.push_str("ae"),
+            'ö' | 'Ö' => o.push_str("oe"),
+            'ü' | 'Ü' => o.push_str("ue"),
+            'ß' => o.push_str("ss"),
+            c if c.is_ascii_alphanumeric() => o.push(c.to_ascii_lowercase()),
+            '.' | '_' | '-' => o.push(c),
+            c if c.is_whitespace() => o.push('-'),
+            _ => {}
+        }
+    }
+    let o = o.trim_start_matches('.').to_string();
+    if o.is_empty() {
+        "page".into()
+    } else {
+        o
+    }
 }

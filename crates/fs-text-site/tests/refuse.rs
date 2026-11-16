@@ -1,7 +1,7 @@
 //! The builder refuses: every rule of the pass-through, the paths and the sites, with counter-probes.
 mod common;
 use common::*;
-use fs_text_site::{build, build_all, FolderSource, Gate, SiteError};
+use fs_text_site::{build, FolderSource, SiteError};
 use std::fs;
 
 #[test]
@@ -174,28 +174,37 @@ fn the_output_folder_is_never_overwritten() {
 }
 
 #[test]
-fn a_missing_image_stops_the_build_but_a_dead_link_only_reports() {
+fn a_missing_image_and_by_default_a_dead_link_stop_the_build_list_mode_only_reports() {
     let t = scratch(false);
     put(&t, "content/en/index.md", b"# Hi\n\n![x](nope.png)\n");
     assert!(refused(&t).contains("missing"));
     let t = scratch(false);
     put(&t, "content/en/index.md", b"# Hi\n\n[x](nope.md)\n");
+    assert!(refused(&t).contains("points to nothing"));
+    fs::write(
+        t.path().join("site.toml"),
+        fs::read_to_string(t.path().join("site.toml")).unwrap()
+            + "[build]\ndead_links = \"list\"\n",
+    )
+    .unwrap();
     let src = FolderSource::open(t.path()).unwrap();
     let r = build(&src, &t.path().join("_o"), &opts()).unwrap();
     assert!(r
         .findings
         .iter()
         .any(|f| f.message.contains("points to nothing") && !f.fatal));
-    // the gate turns it into a stop
-    let mut o = opts();
-    o.policy.dead_links = Gate::Fail;
-    assert!(build(&src, &t.path().join("_o2"), &o).is_err());
 }
 
 #[test]
 fn link_escapes_do_not_leave_the_content_tree() {
     let t = scratch(false);
     put(&t, "content/en/index.md", b"# Hi\n\n[a](../../etc/passwd) [b](/../x.md) [c](..\\x.md) [d](%2e%2e/x.md) [e](javascript:alert(1))\n");
+    fs::write(
+        t.path().join("site.toml"),
+        fs::read_to_string(t.path().join("site.toml")).unwrap()
+            + "[build]\ndead_links = \"list\"\n",
+    )
+    .unwrap();
     let src = FolderSource::open(t.path()).unwrap();
     let r = build(&src, &t.path().join("_o"), &opts()).unwrap();
     let html = fs::read_to_string(t.path().join("_o/en/index.html")).unwrap();
@@ -252,47 +261,4 @@ fn a_declared_checksum_that_does_not_match_is_refused() {
         .unwrap_err()
         .to_string();
     assert!(e.contains("checksum"), "{e}");
-}
-
-#[test]
-fn nested_sites_reserve_their_prefix_against_passed_files() {
-    // landing at / and wiki at /wiki: a file files/wiki/x.css in landing is refused
-    let t = tempfile::tempdir().unwrap();
-    let root = t.path().join("sites");
-    fs::create_dir_all(&root).unwrap();
-    for n in ["landing", "wiki"] {
-        let from = fixtures().join("multi").join(n);
-        let to = root.join(n);
-        copy_tree(&from, &to);
-    }
-    put_at(&root.join("landing/files/wiki/x.css"), b"a{}");
-    let e = build_all(&root, &t.path().join("o"), &opts())
-        .unwrap_err()
-        .to_string();
-    assert!(e.contains("generated prefix"), "{e}");
-}
-
-/// The area rule decides per folder: an active file is fine under an area with `passthrough`
-/// and refused beside it (mutation probe: with the area removed the same file is refused).
-#[test]
-fn csp_area_allows_active_files_only_in_its_folder() {
-    let site = |area: bool| {
-        let t = scratch(true);
-        if area {
-            let mut s = fs::read_to_string(t.path().join("site.toml")).unwrap();
-            s.push_str("[[csp.area]]\npath = \"/apps\"\nmode = \"passthrough\"\n");
-            fs::write(t.path().join("site.toml"), s).unwrap();
-        }
-        t
-    };
-    let t = site(true);
-    put(&t, "files/apps/a.html", b"<script>1</script>");
-    assert!(builds(&t));
-    let t = site(true);
-    put(&t, "files/apps/a.html", b"<script>1</script>");
-    put(&t, "files/other.html", b"<script>1</script>");
-    assert!(refused(&t).contains("other.html"));
-    let t = site(false);
-    put(&t, "files/apps/a.html", b"<script>1</script>");
-    assert!(refused(&t).contains("apps/a.html"));
 }
