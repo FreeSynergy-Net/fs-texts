@@ -23,6 +23,7 @@ reason-variants = pages with language variants are not changed here
 msg-need-page = Open a page first: the new page becomes its subpage.
 msg-finish-edit = Save or discard the changes first, then change the pages.
 msg-created = Page made ({$path}). Write the text, then save (Ctrl+S).
+msg-saved = Saved.
 msg-renamed = Page renamed: now {$path}. Its subpages and the links to it moved along; its history stays.
 msg-deleted = Moved to the trash: {$title}. It can be restored from the trash (Admin window).
 msg-discarded = The draft is discarded.

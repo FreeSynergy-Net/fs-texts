@@ -94,6 +94,12 @@ fn an_empty_wiki_says_so_and_the_first_page_can_be_made_and_saved() {
             r.tree_gets("erste-seite.md"),
             "{short}: the page stands in the tree"
         );
+        // The status line no longer says "Page made ... then save": it says it is saved (review of 0.0.13, condition A).
+        assert!(
+            saved_said(&r),
+            "{short}: the status line says Gespeichert, it says {:?}",
+            r.status()
+        );
         r.window_picture(
             1100,
             700,
@@ -123,6 +129,18 @@ fn an_empty_wiki_says_so_and_the_first_page_can_be_made_and_saved() {
             )
             .unwrap();
     }
+}
+
+/// Wait (at most five seconds) until the status line says "Gespeichert." (the window sets it in a thread after the save).
+fn saved_said(r: &Rig) -> bool {
+    let began = std::time::Instant::now();
+    while began.elapsed() < std::time::Duration::from_secs(5) {
+        if matches!(r.status(), Some(fs_components_app::Status::Info(t)) if t == "Gespeichert.") {
+            return true;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    false
 }
 
 /// A new window, reader and source over the wiki of `r` (what a restart of the program does).

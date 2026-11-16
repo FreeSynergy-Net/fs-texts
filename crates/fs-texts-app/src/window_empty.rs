@@ -106,10 +106,7 @@ impl Switcher {
             let me = words.upgrade();
             let german = me.as_ref().is_some_and(|m| m.setup.german);
             let t = crate::ui_texts::UiTexts::new(german);
-            let why = me.as_ref().and_then(|m| {
-                let locked = m.setup.pages.as_ref().and_then(|p| p.locked_reason());
-                m.lost().map(|_| t.plain("reason-lost")).or(locked)
-            });
+            let why = me.as_ref().and_then(|m| m.why_locked());
             EmptyWords {
                 pages: me
                     .as_ref()

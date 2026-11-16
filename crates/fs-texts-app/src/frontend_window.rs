@@ -214,7 +214,12 @@ impl Switcher {
         let me = Arc::downgrade(self);
         pages.on_saved(Arc::new(move || {
             if let Some(me) = me.upgrade() {
-                std::thread::spawn(move || me.remake_tree());
+                std::thread::spawn(move || {
+                    me.remake_tree();
+                    // The status line still says "Page made ... then save" otherwise (finding of the review of 0.0.13).
+                    let said = me.texts().plain("msg-saved");
+                    me.app.set_status(Some(Status::Info(said)));
+                });
             }
         }));
     }

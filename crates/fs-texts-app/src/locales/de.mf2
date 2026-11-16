@@ -23,6 +23,7 @@ reason-variants = Seiten mit Sprachfassungen werden hier nicht geändert
 msg-need-page = Zuerst eine Seite öffnen: die neue Seite wird ihre Unterseite.
 msg-finish-edit = Erst die Änderungen speichern oder verwerfen, dann die Seiten ändern.
 msg-created = Seite angelegt ({$path}). Text schreiben, dann speichern (Strg+S).
+msg-saved = Gespeichert.
 msg-renamed = Seite umbenannt: jetzt {$path}. Ihre Unterseiten und die Links auf sie sind mitgezogen; ihr Verlauf bleibt.
 msg-deleted = In den Papierkorb gelegt: {$title}. Aus dem Papierkorb lässt sie sich zurückholen (Admin-Fenster).
 msg-discarded = Der Entwurf ist verworfen.

@@ -14,8 +14,9 @@ use fs_components_app::{AppWidget, Status};
 use fs_components_workbenches::{Reader, ReaderWidget};
 use fs_texts_app::WikiSource;
 use fs_texts_app::frontend::Frontend;
-use fs_texts_app::frontend_window::{PAGE_RENAME, Setup, window_with_modal};
+use fs_texts_app::frontend_window::{PAGE_RENAME, Setup, window_linked};
 use fs_texts_app::source::PageMaker;
+use fs_texts_app::window_link::Link;
 use fs_texts_app::window_modal::ModalSlot;
 use fs_texts_core::{Paging, Texts};
 use tokio::runtime::Runtime;
@@ -86,6 +87,17 @@ pub fn rig_locked(
     pages: &[(&str, &str)],
     lock: Option<&str>,
 ) -> Rig {
+    rig_linked(german, frontend, pages, lock, None)
+}
+
+/// The same rig with a watcher of the server (`link`): a probe that fails says "server not reachable" in the window.
+pub fn rig_linked(
+    german: bool,
+    frontend: Frontend,
+    pages: &[(&str, &str)],
+    lock: Option<&str>,
+    link: Option<Link>,
+) -> Rig {
     let (rt, fixture) = common::wiki();
     let wiki = fixture.wiki().texts();
     for (path, text) in pages {
@@ -110,7 +122,7 @@ pub fn rig_locked(
         settings: None,
         pages: Some(maker),
     };
-    let (app, modal) = window_with_modal("Wiki", reader.clone(), frontend, setup).unwrap();
+    let (app, modal) = window_linked("Wiki", reader.clone(), frontend, setup, link).unwrap();
     Rig {
         rt,
         wiki,

@@ -10,7 +10,8 @@ mod page_rig;
 
 use acceptance::{bounds, shots};
 use fs_texts_app::frontend::Frontend;
-use page_rig::{rig_locked, rig_with, serial};
+use fs_texts_app::window_link::Link;
+use page_rig::{rig_linked, rig_locked, rig_with, serial};
 
 const WHY: &str = "nur lesen: dieses Wiki wird hier nicht bearbeitet";
 
@@ -40,6 +41,51 @@ fn a_locked_wiki_says_why_above_the_page_and_an_open_one_does_not() {
                 .query_by_id("fs-texts-banner")
                 .is_none(),
             "{short}: a wiki that can be changed has no such line"
+        );
+    }
+}
+
+/// The server goes away: the line above the page says "server not reachable" (the wiki itself is not read only: only the loss can make the line),
+/// in both frontends, and a server that answers shows no line (review of 0.0.13, condition B).
+#[test]
+fn a_lost_server_says_so_above_the_page() {
+    let _one = serial();
+    let (dir, _keep) = shots();
+    for (frontend, short) in [
+        (Frontend::Notion, "notion"),
+        (Frontend::Confluence, "confluence"),
+    ] {
+        let pages = [("notes.md", "# Notes\n\nA note.\n")];
+        let link = |probe: Result<(), String>| Link {
+            probe: std::sync::Arc::new(move || probe.clone()),
+            reconnect: std::sync::Arc::new(|| Ok(())),
+            socket: std::path::PathBuf::from("/run/user/1000/freesynergy/texts.sock"),
+            facet: None,
+            notes: vec![],
+            every: std::time::Duration::from_millis(40),
+        };
+        let lost = rig_linked(true, frontend, &pages, None, Some(link(Err("weg".into()))));
+        lost.open("notes.md");
+        lost.warm_up();
+        let began = std::time::Instant::now();
+        let mut tree = lost.window_layout(1100.0, 700.0);
+        while tree.query_by_id("fs-texts-banner").is_none() && began.elapsed().as_secs() < 10 {
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            tree = lost.window_layout(1100.0, 700.0);
+        }
+        let (_, _, w, h) = bounds(&tree, "fs-texts-banner");
+        assert!(w > 400.0 && h > 20.0, "{short}: the line is drawn: {w}x{h}");
+        lost.window_picture(1100, 700, &dir.join(format!("verloren-{short}-banner.png")))
+            .unwrap();
+        let fine = rig_linked(true, frontend, &pages, None, Some(link(Ok(()))));
+        fine.open("notes.md");
+        fine.warm_up();
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        assert!(
+            fine.window_layout(1100.0, 700.0)
+                .query_by_id("fs-texts-banner")
+                .is_none(),
+            "{short}: a server that answers has no such line"
         );
     }
 }
