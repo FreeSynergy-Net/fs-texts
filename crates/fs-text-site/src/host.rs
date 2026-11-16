@@ -33,7 +33,9 @@ impl Host {
             return Err(bad("empty"));
         }
         if !s.is_ascii() {
-            return Err(bad("not ASCII (give an international name as its xn-- form)"));
+            return Err(bad(
+                "not ASCII (give an international name as its xn-- form)",
+            ));
         }
         if s.len() > MAX_HOST {
             return Err(bad("longer than 253 bytes"));
@@ -71,7 +73,9 @@ impl Host {
                 let alpha = l.len() >= 2 && l.bytes().all(|b| b.is_ascii_lowercase());
                 let a_label = a_label_tld && l.starts_with("xn--");
                 if !alpha && !a_label {
-                    return Err(bad("the last label must be 2 to 63 letters (or an xn-- label)"));
+                    return Err(bad(
+                        "the last label must be 2 to 63 letters (or an xn-- label)",
+                    ));
                 }
             }
         }
@@ -141,7 +145,9 @@ impl PathPrefix {
             if !seg.bytes().all(|b| {
                 b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'.' | b'_' | b'-')
             }) {
-                return Err(bad("only a-z 0-9 . _ - in a segment (no `%`, `\\`, `?`, `#`)"));
+                return Err(bad(
+                    "only a-z 0-9 . _ - in a segment (no `%`, `\\`, `?`, `#`)",
+                ));
             }
             segs.push(seg.to_string());
         }

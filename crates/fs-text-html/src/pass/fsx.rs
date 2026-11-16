@@ -115,7 +115,7 @@ fn stream(
 /// Open `root/rel` for reading if it is a plain file reached without a link on the way and with
 /// one name only.
 pub fn open_plain(root: &Path, rel: &PassPath) -> Result<File, PassError> {
-    use std::os::unix::fs::MetadataExt;
+    use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
     let mut p = root.to_path_buf();
     let n = rel.segments().count();
     for (i, seg) in rel.segments().enumerate() {
@@ -131,7 +131,6 @@ pub fn open_plain(root: &Path, rel: &PassPath) -> Result<File, PassError> {
     // Open first, and look at the open descriptor (not at the path again): `O_NOFOLLOW` refuses
     // a link as the last part, `O_NONBLOCK` makes opening a pipe return at once (it is then
     // refused below, it never hangs).
-    use std::os::unix::fs::OpenOptionsExt;
     let f = OpenOptions::new()
         .read(true)
         .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
@@ -154,7 +153,9 @@ pub fn open_plain(root: &Path, rel: &PassPath) -> Result<File, PassError> {
     // be the one at `root/rel` with all links resolved.
     let want = fs::canonicalize(root)?.join(rel.as_str());
     if fs::canonicalize(&p)? != want {
-        return Err(PassError::NotRegular("a folder on the way changed while opening"));
+        return Err(PassError::NotRegular(
+            "a folder on the way changed while opening",
+        ));
     }
     Ok(f)
 }

@@ -16,7 +16,7 @@ pub enum MediaType {
     Css,
     /// `text/javascript` (`.js`)
     Js,
-    /// `text/javascript` (`.mjs`)
+    /// `application/javascript` (`.mjs`; the type Zentinel's `mime_guess` sends)
     Mjs,
     /// `application/json`
     Json,
@@ -40,7 +40,7 @@ pub enum MediaType {
     Txt,
     /// `application/pdf`
     Pdf,
-    /// `application/xml`
+    /// `text/xml` (the type Zentinel's `mime_guess` sends)
     Xml,
     /// `application/manifest+json`
     Webmanifest,
@@ -77,7 +77,8 @@ impl MediaType {
         match self {
             Self::Html => "text/html",
             Self::Css => "text/css",
-            Self::Js | Self::Mjs => "text/javascript",
+            Self::Js => "text/javascript",
+            Self::Mjs => "application/javascript",
             Self::Json => "application/json",
             Self::Svg => "image/svg+xml",
             Self::Png => "image/png",
@@ -89,7 +90,7 @@ impl MediaType {
             Self::Woff2 => "font/woff2",
             Self::Txt => "text/plain",
             Self::Pdf => "application/pdf",
-            Self::Xml => "application/xml",
+            Self::Xml => "text/xml",
             Self::Webmanifest => "application/manifest+json",
         }
     }

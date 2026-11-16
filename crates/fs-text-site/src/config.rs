@@ -7,7 +7,8 @@
 
 use crate::error::ConfigError;
 use crate::host::{Host, PathPrefix};
-use serde::Deserialize;
+pub use crate::lang::Lang;
+use crate::raw::{csp, dns_records, Raw, RawSite};
 
 const MAX_BYTES: usize = 8 * 1024;
 const MAX_NAMES: usize = 10;
@@ -43,38 +44,15 @@ pub enum CspMode {
     Passthrough,
 }
 
-/// A checked language tag, lower case (`de`, `en`, `pt-br`); also a folder name of the output.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Lang(String);
-
-impl Lang {
-    /// Check `s`: 2 or 3 letters, then up to two parts of 2 to 8 letters or digits.
-    pub fn parse(s: &str) -> Result<Self, ConfigError> {
-        let mut parts = s.split('-');
-        let first = parts.next().unwrap_or("");
-        let ok_first = (2..=3).contains(&first.len()) && first.bytes().all(|b| b.is_ascii_lowercase());
-        let rest: Vec<&str> = parts.collect();
-        let ok_rest = rest.len() <= 2
-            && rest.iter().all(|p| {
-                (2..=8).contains(&p.len())
-                    && p.bytes()
-                        .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
-            });
-        if ok_first && ok_rest {
-            Ok(Self(s.to_string()))
-        } else {
-            Err(ConfigError::BadLanguage(format!(
-                "{:?} is not a lower-case language tag like de, en, pt-br",
-                crate::host::printable(s)
-            )))
-        }
-    }
-
-    /// The tag.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
+/// `[[csp.area]]`: the rule of one folder of the site (and everything below it).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CspArea {
+    /// The folder, below the site's own prefix (`/apps`).
+    pub path: PathPrefix,
+    /// What files there may do.
+    pub mode: CspMode,
+    /// A complete policy for this folder.
+    pub policy: Option<String>,
 }
 
 /// A checked site description.
@@ -86,7 +64,8 @@ pub struct SiteConfig {
     pub id: String,
     /// Name shown in the page frame.
     pub name: String,
-    /// The host used in absolute addresses (canonical, `hreflang`, sitemap).
+    /// The host used in absolute addresses (canonical, `hreflang`, sitemap): `names.primary`,
+    /// the one place the name is written.
     pub host: Host,
     /// The host names the site answers to (primary first, then aliases).
     pub names: Vec<Host>,
@@ -102,56 +81,8 @@ pub struct SiteConfig {
     pub csp_mode: CspMode,
     /// `csp.policy`, replaces the preset of the mode.
     pub csp_policy: Option<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawNames {
-    primary: String,
-    aliases: Option<Vec<String>>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawDns {
-    records: Vec<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawAcme {
-    method: String,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawCsp {
-    mode: Option<String>,
-    policy: Option<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawSite {
-    id: String,
-    name: Option<String>,
-    host: Option<String>,
-    path_prefix: Option<String>,
-    languages: Option<Vec<String>>,
-    default_language: Option<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Raw {
-    #[allow(dead_code)]
-    schema: i64,
-    purpose: String,
-    site: Option<RawSite>,
-    names: RawNames,
-    dns: Option<RawDns>,
-    acme: RawAcme,
-    csp: Option<RawCsp>,
+    /// Rules of single folders; the longest matching folder wins, else `csp_mode`.
+    pub csp_areas: Vec<CspArea>,
 }
 
 impl SiteConfig {
@@ -166,7 +97,11 @@ impl SiteConfig {
         let schema = match table.get("schema") {
             Some(toml::Value::Integer(n @ (1 | 2))) => *n,
             Some(toml::Value::Integer(n)) => return Err(ConfigError::UnknownSchema(*n)),
-            _ => return Err(ConfigError::Toml("`schema` must be the number 1 or 2".into())),
+            _ => {
+                return Err(ConfigError::Toml(
+                    "`schema` must be the number 1 or 2".into(),
+                ))
+            }
         };
         let raw: Raw = toml::from_str(text).map_err(|e| {
             ConfigError::Toml(crate::host::printable(&e.message().replace('\n', " ")))
@@ -186,7 +121,13 @@ impl SiteConfig {
             (None, false) => return Err(ConfigError::SiteTable("schema 2 needs a [site] table")),
             _ => {}
         }
-        let host_of = |s: &str| if v1 { Host::parse_v1(s) } else { Host::parse(s) };
+        let host_of = |s: &str| {
+            if v1 {
+                Host::parse_v1(s)
+            } else {
+                Host::parse(s)
+            }
+        };
         let primary = host_of(&raw.names.primary)?;
         let mut names = vec![primary.clone()];
         let aliases = raw.names.aliases.unwrap_or_default();
@@ -208,7 +149,7 @@ impl SiteConfig {
                 "only \"http-01\" is allowed".into()
             }));
         }
-        let (csp_mode, csp_policy) = csp(raw.csp)?;
+        let (csp_mode, csp_policy, csp_areas) = csp(raw.csp, v1)?;
         let mut cfg = Self {
             schema: if v1 { 1 } else { 2 },
             id: "main".into(),
@@ -221,6 +162,7 @@ impl SiteConfig {
             dns_records,
             csp_mode,
             csp_policy,
+            csp_areas,
         };
         if let Some(s) = raw.site {
             cfg.apply_site(s)?;
@@ -249,13 +191,6 @@ impl SiteConfig {
             self.name = n;
         } else {
             self.name.clone_from(&self.id);
-        }
-        if let Some(h) = s.host {
-            let h = Host::parse(&h)?;
-            if !self.names.contains(&h) {
-                return Err(ConfigError::HostNotInNames(h.as_str().to_string()));
-            }
-            self.host = h;
         }
         if let Some(p) = s.path_prefix {
             self.path_prefix = PathPrefix::parse(&p)?;
@@ -303,10 +238,13 @@ impl SiteConfig {
         let r: Vec<String> = self.dns_records.iter().map(|r| q(r.name())).collect();
         o.push_str(&format!("\n[dns]\nrecords = [{}]\n", r.join(", ")));
         o.push_str("\n[acme]\nmethod = \"http-01\"\n\n[csp]\n");
-        let m = match self.csp_mode {
-            CspMode::Static => "static",
-            CspMode::Passthrough => "passthrough",
-        };
+        // schema 1 has one mode per site: passthrough as soon as any folder needs it
+        let any = self.csp_mode == CspMode::Passthrough
+            || self
+                .csp_areas
+                .iter()
+                .any(|a| a.mode == CspMode::Passthrough);
+        let m = if any { "passthrough" } else { "static" };
         o.push_str(&format!("mode = {}\n", q(m)));
         if let Some(p) = &self.csp_policy {
             o.push_str(&format!("policy = {}\n", q(p)));
@@ -327,45 +265,16 @@ impl SiteConfig {
     }
 }
 
-fn dns_records(d: Option<RawDns>) -> Result<Vec<DnsRecord>, ConfigError> {
-    let Some(d) = d else {
-        return Ok(vec![DnsRecord::A, DnsRecord::Aaaa]);
-    };
-    if d.records.is_empty() {
-        return Err(ConfigError::DnsRecords("must not be empty".into()));
+impl SiteConfig {
+    /// What files at `rel` (a path below the site, no leading `/`) may do: the longest matching
+    /// `[[csp.area]]`, else `csp.mode`.
+    #[must_use]
+    pub fn csp_mode_for(&self, rel: &str) -> CspMode {
+        let segs: Vec<String> = rel.split('/').map(str::to_string).collect();
+        self.csp_areas
+            .iter()
+            .filter(|a| a.path.segments().len() < segs.len() && segs.starts_with(a.path.segments()))
+            .max_by_key(|a| a.path.segments().len())
+            .map_or(self.csp_mode, |a| a.mode)
     }
-    let mut out = Vec::new();
-    for r in &d.records {
-        let t = match r.as_str() {
-            "A" => DnsRecord::A,
-            "AAAA" => DnsRecord::Aaaa,
-            "CAA" => DnsRecord::Caa,
-            _ => return Err(ConfigError::DnsRecords("only A, AAAA, CAA".into())),
-        };
-        if out.contains(&t) {
-            return Err(ConfigError::DnsRecords("a type twice".into()));
-        }
-        out.push(t);
-    }
-    Ok(out)
-}
-
-fn csp(c: Option<RawCsp>) -> Result<(CspMode, Option<String>), ConfigError> {
-    let Some(c) = c else {
-        return Ok((CspMode::Static, None));
-    };
-    let mode = match c.mode.as_deref() {
-        None | Some("static") => CspMode::Static,
-        Some("passthrough") => CspMode::Passthrough,
-        Some(_) => return Err(ConfigError::CspMode("static or passthrough".into())),
-    };
-    if let Some(p) = &c.policy {
-        let ok = (1..=1000).contains(&p.len())
-            && p.chars()
-                .all(|c| c.is_ascii_alphanumeric() || " ;:'*._/=+,%-".contains(c));
-        if !ok {
-            return Err(ConfigError::CspPolicy);
-        }
-    }
-    Ok((mode, c.policy))
 }

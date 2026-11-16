@@ -4,8 +4,8 @@
 //! existing ancestor; siblings are ordered by the `.pages` position, then naturally (numbers in
 //! names count as numbers: `2` before `10`).
 
-use crate::index::page_url;
 use crate::config::Lang;
+use crate::index::page_url;
 use fs_text_html::escape;
 use fs_text_html::{NavNode, Navigation};
 use std::cmp::Ordering;
@@ -54,7 +54,11 @@ pub fn natural_cmp(a: &str, b: &str) -> Ordering {
 }
 
 fn trim_zeros(d: &[u8]) -> &[u8] {
-    let z = d.iter().take_while(|b| **b == b'0').count().min(d.len().saturating_sub(1));
+    let z = d
+        .iter()
+        .take_while(|b| **b == b'0')
+        .count()
+        .min(d.len().saturating_sub(1));
     &d[z..]
 }
 
@@ -91,7 +95,13 @@ pub fn build(prefix: &str, lang: &Lang, pages: &[TreePage], extra: Vec<NavNode>)
         k.sort_by(cmp);
     }
     #[allow(clippy::items_after_statements)]
-    fn node(i: usize, pages: &[TreePage], kids: &[Vec<usize>], prefix: &str, lang: &Lang) -> NavNode {
+    fn node(
+        i: usize,
+        pages: &[TreePage],
+        kids: &[Vec<usize>],
+        prefix: &str,
+        lang: &Lang,
+    ) -> NavNode {
         NavNode {
             title: pages[i].title.clone(),
             href: page_url(prefix, lang, &pages[i].path),

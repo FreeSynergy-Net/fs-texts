@@ -181,7 +181,12 @@ fn reserved_paths_are_built_in_and_may_have_several_segments() {
     ] {
         assert!(set.add(&PassPath::parse(p).unwrap()).is_err(), "{p}");
     }
-    for p in [".well-known/security.txt", "apps/public/x.css", "apps/privatex.css", "site.toml.txt"] {
+    for p in [
+        ".well-known/security.txt",
+        "apps/public/x.css",
+        "apps/privatex.css",
+        "site.toml.txt",
+    ] {
         assert!(set.add(&PassPath::parse(p).unwrap()).is_ok(), "{p}");
     }
 }

@@ -37,7 +37,12 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     };
     let opt = BuildOptions::new(UNIX_EPOCH + Duration::from_secs(secs));
-    let result = match args.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
+    let result = match args
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
         ["build", src, out] => FolderSource::open(PathBuf::from(src)).and_then(|s| {
             let s = match &revision {
                 Some(r) => s.with_revision(r),

@@ -170,16 +170,27 @@ fn same_input_same_bytes() {
 fn the_navigation_budget_is_kept_by_the_code_also_for_a_flat_folder() {
     use fs_text_html::{NavNode, Navigation};
     let kids: Vec<NavNode> = (0..5000)
-        .map(|i| NavNode { title: format!("Page {i}"), href: format!("/en/a/p{i}/"), children: vec![] })
+        .map(|i| NavNode {
+            title: format!("Page {i}"),
+            href: format!("/en/a/p{i}/"),
+            children: vec![],
+        })
         .collect();
     let nav = Navigation {
-        roots: vec![NavNode { title: "A".into(), href: "/en/a/".into(), children: kids }],
+        roots: vec![NavNode {
+            title: "A".into(),
+            href: "/en/a/".into(),
+            children: kids,
+        }],
     };
     for cur in ["/en/a/", "/en/a/p0/", "/en/a/p4999/"] {
         let h = nav.render(cur);
         assert!(h.len() < 20 * 1024, "{cur}: {} bytes", h.len());
         if cur.ends_with("p4999/") {
-            assert!(h.contains("aria-current"), "the page itself is always listed");
+            assert!(
+                h.contains("aria-current"),
+                "the page itself is always listed"
+            );
         }
     }
 }

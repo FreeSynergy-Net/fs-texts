@@ -24,7 +24,10 @@ pub fn sitemap(cfg: &SiteConfig, pages: &BTreeMap<Vec<String>, Vec<Lang>>) -> St
     };
     for (path, langs) in pages {
         for l in langs {
-            o.push_str(&format!("<url>\n<loc>{}</loc>\n", text_string(&abs(l, path))));
+            o.push_str(&format!(
+                "<url>\n<loc>{}</loc>\n",
+                text_string(&abs(l, path))
+            ));
             if langs.len() > 1 {
                 for a in langs {
                     o.push_str(&format!(

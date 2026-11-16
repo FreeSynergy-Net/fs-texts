@@ -99,14 +99,14 @@
     {
       "bytes": 189,
       "kind": "generated",
-      "media": "application/toml",
+      "media": "text/x-toml",
       "path": "site.toml",
       "sha256": "1bdf60738752f5f5a05cae52eafb11caef4158af34fca89851ac8b4927d1d0c4"
     },
     {
       "bytes": 770,
       "kind": "generated",
-      "media": "application/xml",
+      "media": "text/xml",
       "path": "sitemap.xml",
       "sha256": "bda2e022d3153cba4ca0a8ff76fc3e4ca5f57d11ce2566b6d93d529610c1b9fa"
     }

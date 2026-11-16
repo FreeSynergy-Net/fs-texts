@@ -34,8 +34,6 @@ pub enum ConfigError {
     },
     /// A name twice, an alias equal to the primary name, or too many names.
     Names(String),
-    /// `site.host` is not one of the names.
-    HostNotInNames(String),
     /// `site.id` breaks the rule.
     BadId(String),
     /// `site.name` breaks the rule.
@@ -87,7 +85,6 @@ impl fmt::Display for ConfigError {
             Self::BadHost { name, why } => write!(f, "host name {name:?}: {why}"),
             Self::BadPrefix { prefix, why } => write!(f, "path prefix {prefix:?}: {why}"),
             Self::Names(m) => write!(f, "names: {m}"),
-            Self::HostNotInNames(h) => write!(f, "site.host {h:?} is not one of the names"),
             Self::BadId(m) => write!(f, "site.id: {m}"),
             Self::BadName => write!(f, "site.name: 1 to 80 characters, no control characters"),
             Self::BadLanguage(m) => write!(f, "languages: {m}"),

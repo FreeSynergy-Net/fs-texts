@@ -178,7 +178,10 @@ impl Out {
 #[cfg(unix)]
 fn set_mode(p: &Path, dir: bool) -> std::io::Result<()> {
     use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(p, fs::Permissions::from_mode(if dir { 0o755 } else { 0o644 }))
+    fs::set_permissions(
+        p,
+        fs::Permissions::from_mode(if dir { 0o755 } else { 0o644 }),
+    )
 }
 
 #[cfg(not(unix))]
