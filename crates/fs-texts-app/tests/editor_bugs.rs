@@ -77,35 +77,52 @@ fn typed(tree: &mut RenderTree, text: &str) {
     tree.process_pending_subtree_rebuilds();
 }
 
+/// The caret (blue) and the last ink of `text` typed into a new block, and the caret of the still empty block.
+fn typed_probe(dir: &std::path::Path, n: usize, text: &str) -> (u32, u32, u32) {
+    let (r, mut tree) = editing();
+    r.reader.focus_block(0, 18);
+    key(&mut tree, 13, false, false);
+    let empty = shoot(&r, dir, "b1-0-neuer-block.png");
+    typed(&mut tree, text);
+    let p = shoot(&r, dir, &format!("b1-vorher-{n}.png"));
+    let rows = 395..425;
+    let first_blue = |p: &Shot| (480..900).find(|&x| rows.clone().any(|y| blue(at(p, x, y))));
+    let last_ink = (480..900)
+        .rev()
+        .find(|&x| rows.clone().any(|y| ink(at(&p, x, y))));
+    (
+        first_blue(&p).expect(text),
+        last_ink.expect(text),
+        first_blue(&empty).expect("caret of the empty block"),
+    )
+}
+
 /// b1 (user: with ">" the cursor stands about 0.5 cm too far in front; suspected: wrong width of the glyph): for several strings typed
-/// into a new block the caret stands right behind the last ink (at most 3 px apart; a trailing space is one space wide, 6 px at most).
+/// into a new block the caret stands right behind the last ink. How far "right behind" may be is measured in the width of a
+/// character of the renderer at hand, not in fixed pixels: at most three quarters of the advance of an "m" (12 px here, so
+/// 9 px). Measured: 2 px locally (3 px for "|" and "<>"), 5 px for "|" on the CI runner (other font rendering, software GPU);
+/// the fault of the hand test is about 19 px (a character off). A trailing space has no ink of its own, so the last ink is the
+/// one before it: a space is one space wide more, 8 px at most (unchanged).
 /// Not red in this rig (see the README): the guard that stays for the spike on inline rendering.
 #[test]
 fn b1_the_caret_stands_right_behind_what_was_typed() {
     let _one = serial();
     let (dir, _keep) = shots();
+    let (m_caret, _, m_start) = typed_probe(&dir, 99, "m");
+    let m_width = m_caret - m_start;
+    let near = m_width * 3 / 4;
     for (n, text) in [
         ">", "> ", ">>>", "<>", "a>b", "abc", "W>", "m", "#", "|", "-", "iii",
     ]
     .into_iter()
     .enumerate()
     {
-        let (r, mut tree) = editing();
-        r.reader.focus_block(0, 18);
-        key(&mut tree, 13, false, false);
-        shoot(&r, &dir, "b1-0-neuer-block.png");
-        typed(&mut tree, text);
-        let p = shoot(&r, &dir, &format!("b1-vorher-{n}.png"));
-        let rows = 395..425;
-        let last_ink = (480..900)
-            .rev()
-            .find(|&x| rows.clone().any(|y| ink(at(&p, x, y))));
-        let caret = (480..900).find(|&x| rows.clone().any(|y| blue(at(&p, x, y))));
-        let (last_ink, caret) = (last_ink.expect(text), caret.expect(text));
-        let room = if text.ends_with(' ') { 8 } else { 3 };
+        let (caret, last_ink, _) = typed_probe(&dir, n, text);
+        let room = if text.ends_with(' ') { 8 } else { near };
         assert!(
             caret + 1 >= last_ink && caret.saturating_sub(last_ink) <= room,
-            "{text:?}: the caret (x={caret}) stands right behind the text (last ink x={last_ink})"
+            "{text:?}: the caret (x={caret}) stands right behind the text (last ink x={last_ink}); \
+             allowed {room} px (3/4 of the width of an \"m\", {m_width} px)"
         );
     }
 }
