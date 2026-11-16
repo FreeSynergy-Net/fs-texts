@@ -22,8 +22,8 @@ use fs_texts_core::{Error, Registry, Result};
 use crate::feed_state::FeedState;
 use crate::remote::Remote;
 
-/// The name of the server in every error text (`wiki server: ...`).
-const SERVER: &str = "wiki";
+/// The program name the default socket is made from (`$XDG_RUNTIME_DIR/freesynergy/texts.sock`).
+const SERVER: &str = "texts";
 
 /// The wiki program as seen over its socket. Implements `Texts` and `TextFeed`.
 ///

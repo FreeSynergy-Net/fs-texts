@@ -39,6 +39,6 @@ mod writes_v2;
 #[cfg(unix)]
 pub use hub_purge::manifest;
 pub use hub_purge::{HubPurge, PROGRAM};
-pub use program::{serve, ServeError, HELP};
+pub use program::{parse_options, serve, ServeError, HELP};
 pub use texts_service::{TextsServer, CONTRACT_VERSION};
 pub use wire::MAX_SOURCE_BYTES;

@@ -9,13 +9,39 @@ use std::sync::Arc;
 
 use crate::{HubPurge, TextsServer};
 use fs_interfaces::rpc::{
-    prepare_data_dir, run_until_signal_as, stop_self, ServerIdentity, ServerOptions,
+    default_data_dir, prepare_data_dir, run_until_signal_as, stop_self, ServerIdentity,
+    ServerOptions,
 };
 use fs_objects::{Store, TursoStore};
 use fs_texts_core::WikiRepo;
 
 /// The help text.
-pub const HELP: &str = "fs-texts serve [--socket PATH] [--data DIR] [--actor IRI] [--instance DOMAIN] [--facet NAME] [--hub-socket PATH] [--lease FILE]\nDefaults: $XDG_RUNTIME_DIR/freesynergy/texts.sock, $XDG_DATA_HOME/freesynergy/wiki, the local owner; the hub at its default socket (only `purge` and `purgeRevision` need it)\n--lease FILE: end when no window holds this lock any more (started by a window, not by hand)";
+pub const HELP: &str = "fs-texts serve [--socket PATH] [--data DIR] [--actor IRI] [--instance DOMAIN] [--facet NAME] [--hub-socket PATH] [--lease FILE]\nDefaults: $XDG_RUNTIME_DIR/freesynergy/texts.sock, $XDG_DATA_HOME/freesynergy/wiki (for now), the local owner; the hub at its default socket (only `purge` and `purgeRevision` need it)\n--lease FILE: end when no window holds this lock any more (started by a window, not by hand)";
+
+/// The program name the socket is made from: `$XDG_RUNTIME_DIR/freesynergy/texts.sock` (the client says the same).
+const SOCKET_PROGRAM: &str = "texts";
+/// The folder of the server's data below `freesynergy/`. Stays `wiki` for now: the data of the user is there, nothing is
+/// moved silently (a question about moving it comes later).
+const DATA_FOLDER: &str = "wiki";
+
+/// The options of `serve`; the defaults are `texts.sock` and the data folder `wiki`.
+///
+/// # Errors
+/// The words were unknown or incomplete.
+pub fn parse_options(
+    args: impl IntoIterator<Item = OsString>,
+) -> Result<Option<ServerOptions>, String> {
+    let parsed = ServerOptions::parse(SOCKET_PROGRAM, args)?;
+    // The shared parser names the data folder like the socket; here they differ (`texts.sock`, `wiki`).
+    Ok(parsed.map(|mut o| {
+        if Some(&o.data) == default_data_dir(SOCKET_PROGRAM).as_ref() {
+            if let Some(data) = default_data_dir(DATA_FOLDER) {
+                o.data = data;
+            }
+        }
+        o
+    }))
+}
 
 /// Why `serve` ended without serving.
 #[derive(Debug, PartialEq, Eq)]
@@ -41,7 +67,7 @@ pub fn serve(args: impl IntoIterator<Item = OsString>) -> Result<(), ServeError>
         instance,
         // The facet is read by the shared parser; this server serves one wiki whatever the link says.
         facet: _,
-    }) = ServerOptions::parse("wiki", args).map_err(ServeError::Usage)?
+    }) = parse_options(args).map_err(ServeError::Usage)?
     else {
         println!("{HELP}");
         return Ok(());
