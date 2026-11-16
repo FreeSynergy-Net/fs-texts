@@ -37,8 +37,9 @@ pub(crate) fn render(
             | MarkKind::Code
             | MarkKind::Strike
             | MarkKind::Link
-            | MarkKind::Image
-            | MarkKind::Html => m.end > a && m.start < b && (m.start < m.end || m.kind == MarkKind::Image),
+            | MarkKind::Html => m.end > a && m.start < b && m.start < m.end,
+            MarkKind::Image if m.start == m.end => m.start >= a && m.start <= b,
+            MarkKind::Image => m.end > a && m.start < b,
             MarkKind::FootnoteRef => m.start >= a && m.start <= b,
             MarkKind::Variable => {
                 if m.start >= a && m.start <= b {

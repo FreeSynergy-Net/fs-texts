@@ -6,6 +6,7 @@
 
 use crate::escape;
 use crate::page::{HtmlPage, TocEntry};
+use crate::raw::Cleaner;
 use crate::state::{Env, PageState};
 use crate::tree::{build, footnote_labels, Node};
 use fs_text::{Block, Container};
@@ -18,6 +19,8 @@ pub(crate) struct Renderer<'e, 'n> {
     pub tops: usize,
     pub meta: (Option<String>, Option<String>, Option<String>),
     stash: Vec<(&'n str, &'n [Node<'n>])>,
+    /// Raw HTML tags open across the HTML blocks of one sequence (`<details>` … `</details>`).
+    pub raw: Cleaner,
 }
 
 /// Render `blocks` into a page.
@@ -31,6 +34,7 @@ pub(crate) fn render_blocks(env: &Env, blocks: &[Block]) -> HtmlPage {
         tops: 0,
         meta: (None, None, None),
         stash: Vec::new(),
+        raw: Cleaner::new(env.raw),
     };
     footnote_labels(&tree, &mut r.st.defined);
     let mut body = String::new();
@@ -58,6 +62,14 @@ pub(crate) fn render_blocks(env: &Env, blocks: &[Block]) -> HtmlPage {
 
 impl<'n> Renderer<'_, 'n> {
     pub(crate) fn nodes(&mut self, nodes: &'n [Node<'n>], tight: bool, out: &mut String) {
+        let (base, floor) = (self.raw.depth(), self.raw.floor());
+        self.raw.set_floor(base);
+        self.sequence(nodes, tight, out);
+        self.raw.close_to(base, out);
+        self.raw.set_floor(floor);
+    }
+
+    fn sequence(&mut self, nodes: &'n [Node<'n>], tight: bool, out: &mut String) {
         let mut i = 0;
         while i < nodes.len() {
             match &nodes[i] {

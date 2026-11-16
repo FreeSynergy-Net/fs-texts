@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39;; script-src &#39;none&#39;; object-src &#39;none&#39;; base-uri &#39;none&#39;; form-action &#39;none&#39;">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rich page – Example Site</title>
+<meta name="description" content="Every construct once.">
+<link rel="canonical" href="https://example.test/de/guide/">
+<link rel="alternate" hreflang="de" href="https://example.test/de/guide/">
+<link rel="alternate" hreflang="en" href="https://example.test/en/guide/">
+<link rel="alternate" hreflang="x-default" href="https://example.test/">
+<link rel="stylesheet" href="/_fs/theme.css">
+</head>
+<body>
+<a class="skip" href="#main">Zum Inhalt springen</a>
+<header>
+<p class="site">Example Site</p>
+<nav class="langs" aria-label="Sprachen"><ul><li><a href="https://example.test/de/guide/" hreflang="de" lang="de" aria-current="true">Deutsch</a></li><li><a href="https://example.test/en/guide/" hreflang="en" lang="en">English</a></li></ul></nav>
+</header>
+<div class="layout">
+<nav class="side" aria-label="Seitennavigation">
+<ul>
+<li><a href="/de/">Start</a></li>
+<li><a href="/de/guide/" aria-current="page">Guide</a>
+<ul>
+<li><a href="/de/guide/install/">Install</a></li>
+<li><a href="/de/guide/use/">Use</a></li>
+</ul>
+</li>
+<li><a href="/de/about/">About</a></li>
+</ul>
+</nav>
+<main id="main">
+<h1 id="rich-page">Rich page</h1>
+<p>Intro with <em>emphasis</em>, <strong>strong</strong>, <del>strike</del>, <code>code</code>, a <a href="https://example.org/a?b=1&amp;c=2" title="T">link</a>, and a note.<sup class="fnref"><a id="fnref-1" href="#fn-1">1</a></sup>
+Hard break here<br>and a keyboard key <kbd>Ctrl</kbd> and &lt;script&gt;bad()&lt;/script&gt;.</p>
+<h2 id="lists">Lists</h2>
+<ul>
+<li>one
+</li>
+<li>two
+<ol>
+<li>nested ordered
+</li>
+<li>second
+</li>
+</ol>
+</li>
+</ul>
+<ol start="3">
+<li>starts at three
+</li>
+<li>four
+</li>
+</ol>
+<ul>
+<li class="task"><label><input type="checkbox" disabled> open task</label>
+</li>
+<li class="task"><label><input type="checkbox" disabled checked> done task</label>
+</li>
+</ul>
+<h2 id="quote-and-callouts">Quote and callouts</h2>
+<blockquote>
+<p>A quote.</p>
+</blockquote>
+<aside class="callout callout-warning" role="note">
+<p class="callout-title">Mind this</p>
+<p>Callout body with <code>code</code>.</p>
+</aside>
+<details class="callout callout-tip">
+<summary>Folded</summary>
+<p>Hidden text.</p>
+</details>
+<h2 id="table">Table</h2>
+<table>
+<thead>
+<tr><th scope="col" class="al-l">Left</th><th scope="col" class="al-c">Centre</th><th scope="col" class="al-r">Right</th></tr>
+</thead>
+<tbody>
+<tr><td class="al-l">a</td><td class="al-c"><strong>b</strong></td><td class="al-r">c</td></tr>
+<tr><td class="al-l">[ ]</td><td class="al-c">[x]</td><td class="al-r"><code>d</code></td></tr>
+</tbody>
+</table>
+<h2 id="code">Code</h2>
+<pre><code class="language-rust">fn main() { println!("&lt;b&gt;"); }
+</code></pre>
+<details lang="en">
+<summary>More</summary>
+<p>Inside.</p>
+</details>
+<p><img src="pic.png" alt="A picture" loading="lazy"></p>
+<hr>
+<section class="footnotes" aria-label="Footnotes">
+<hr>
+<ol>
+<li id="fn-1">The footnote with <em>marks</em>. <a class="fn-back" href="#fnref-1" aria-label="Back to the place in the text">↩</a></li>
+</ol>
+</section>
+</main>
+</div>
+<footer><p>Example footer</p></footer>
+</body>
+</html>

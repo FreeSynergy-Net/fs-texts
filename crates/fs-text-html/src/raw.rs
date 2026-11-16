@@ -54,6 +54,11 @@ impl Cleaner {
     pub fn depth(&self) -> usize {
         self.open.len()
     }
+    /// The floor now.
+    #[must_use]
+    pub fn floor(&self) -> usize {
+        self.floor
+    }
     /// A closing tag may not close anything below `floor` (the surrounding mark's start).
     pub fn set_floor(&mut self, floor: usize) {
         self.floor = floor;

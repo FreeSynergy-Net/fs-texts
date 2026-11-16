@@ -4,7 +4,6 @@
 
 use crate::escape;
 use crate::page::{front_matter, TocEntry};
-use crate::raw::Cleaner;
 use crate::render::Renderer;
 use crate::{inline, table, Problem};
 use fs_text::markdown::HARD_BREAK;
@@ -49,14 +48,21 @@ impl Renderer<'_, '_> {
                 }
                 out.push_str("</code></pre>\n");
             }
+            // a link reference definition: Markdown source the parser used, not HTML
+            BlockKind::Html if b.attrs.extra.contains_key("unparsed") => {}
             BlockKind::Html => {
-                let mut c = Cleaner::new(self.env.raw);
+                let before = self.raw.depth();
                 let mut inner = String::new();
-                c.feed(&b.text.to_string(), &mut inner, &mut self.st.report);
-                c.close_to(0, &mut inner);
-                out.push_str("<div class=\"raw\">");
-                out.push_str(inner.trim_matches('\n'));
-                out.push_str("</div>\n");
+                self.raw.feed(&b.text.to_string(), &mut inner, &mut self.st.report);
+                // a tag left open (or opened earlier) spans blocks: no wrapper then
+                if before > 0 || self.raw.depth() > 0 {
+                    out.push_str(inner.trim_matches('\n'));
+                    out.push('\n');
+                } else {
+                    out.push_str("<div class=\"raw\">");
+                    out.push_str(inner.trim_matches('\n'));
+                    out.push_str("</div>\n");
+                }
             }
             BlockKind::ThematicBreak => out.push_str("<hr>\n"),
             BlockKind::Table { align } => table::render(self.env, &mut self.st, b, align, out),
