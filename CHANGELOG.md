@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.0.13 (in progress)
+## 0.0.13
 
 ### English
 
