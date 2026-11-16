@@ -1,0 +1,124 @@
+{
+  "files": [
+    {
+      "active": false,
+      "bytes": 38,
+      "kind": "passthrough",
+      "media": "text/plain",
+      "path": ".well-known/security.txt",
+      "sha256": "9413328279f172bdc4112b97dd67dba7cf4555b03b9aaac5d398176d9222f4f1"
+    },
+    {
+      "bytes": 921,
+      "kind": "generated",
+      "media": "text/html",
+      "path": "404.html",
+      "sha256": "6cccd7a23106cf738f2193cbd1d1124f72133ba0cdf4de31424d6f33b45ff8d8"
+    },
+    {
+      "bytes": 2500,
+      "kind": "generated",
+      "media": "text/css",
+      "path": "_fs/theme.7b54fa7963592359.css",
+      "sha256": "7b54fa796359235956a7d60adb2d7e77ad836b62f111aa695c062111e3aacc0a"
+    },
+    {
+      "active": true,
+      "bytes": 28,
+      "kind": "passthrough",
+      "media": "text/javascript",
+      "path": "app.js",
+      "sha256": "ec1c6752b927ce4ecd77054cbabedf8f46fbe91db5e3090f9861bcd20d93470c"
+    },
+    {
+      "active": false,
+      "bytes": 17,
+      "kind": "passthrough",
+      "media": "text/css",
+      "path": "css/site.css",
+      "sha256": "7091ab4775b4fa8b1b81b322dc3b0f86a1736e13cdeee8a3fad54ca43dce8025"
+    },
+    {
+      "bytes": 1194,
+      "kind": "page",
+      "media": "text/html",
+      "path": "de/about/index.html",
+      "sha256": "8295503fadab794afc3ca35c5761598f6884949d18cba462a087c513df543d73"
+    },
+    {
+      "bytes": 1488,
+      "kind": "page",
+      "media": "text/html",
+      "path": "de/index.html",
+      "sha256": "4d88547ce418ba96a77958615e0d346ee5712fb26740d55eb91ddca9a9515cb0"
+    },
+    {
+      "bytes": 1480,
+      "kind": "page",
+      "media": "text/html",
+      "path": "de/inhalt/index.html",
+      "sha256": "3dcf5e11ebed2f4f49a89440135b7c805edbfee61f27e22887d5eb00ecc2c291"
+    },
+    {
+      "bytes": 1396,
+      "kind": "page",
+      "media": "text/html",
+      "path": "en/contents/index.html",
+      "sha256": "0b9ec8fc6a0de2a39604073f88a73d72b1e3605b0057fc7286b23566e136163e"
+    },
+    {
+      "bytes": 1393,
+      "kind": "page",
+      "media": "text/html",
+      "path": "en/index.html",
+      "sha256": "00d9e0cb6c9865991de244927313fa0088a5398f7f3c3f8ebede70499a181afc"
+    },
+    {
+      "active": false,
+      "bytes": 70,
+      "kind": "passthrough",
+      "media": "image/png",
+      "path": "img/logo.png",
+      "sha256": "abc58d5127d7cdf313beb9ec8ee839860a9c6bfbc48c8b8eb6a3f7d8bb63de6f"
+    },
+    {
+      "active": true,
+      "bytes": 187,
+      "kind": "passthrough",
+      "media": "text/html",
+      "path": "index.html",
+      "sha256": "21f54681f27c8512ed01f01971a1d2becfaa063769bafafcddae9ef6edcc9b9b"
+    },
+    {
+      "bytes": 66,
+      "kind": "generated",
+      "media": "text/plain",
+      "path": "robots.txt",
+      "sha256": "f51a8e141eed65dc695fb8824827cd150dcc08a7272aa7c6cbc608995b1b4f96"
+    },
+    {
+      "bytes": 189,
+      "kind": "generated",
+      "media": "application/toml",
+      "path": "site.toml",
+      "sha256": "1bdf60738752f5f5a05cae52eafb11caef4158af34fca89851ac8b4927d1d0c4"
+    },
+    {
+      "bytes": 770,
+      "kind": "generated",
+      "media": "application/xml",
+      "path": "sitemap.xml",
+      "sha256": "bda2e022d3153cba4ca0a8ff76fc3e4ca5f57d11ce2566b6d93d529610c1b9fa"
+    }
+  ],
+  "host": "example.test",
+  "languages": [
+    "de",
+    "en"
+  ],
+  "manifest": 1,
+  "path_prefix": "",
+  "site": "landing",
+  "source_revision": null,
+  "tool": "fs-text-site 0.0.12"
+}

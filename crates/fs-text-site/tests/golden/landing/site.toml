@@ -1,0 +1,15 @@
+schema = 1
+purpose = "website"
+
+[names]
+primary = "example.test"
+aliases = ["www.example.test"]
+
+[dns]
+records = ["A", "AAAA", "CAA"]
+
+[acme]
+method = "http-01"
+
+[csp]
+mode = "passthrough"

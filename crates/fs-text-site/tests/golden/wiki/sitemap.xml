@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<url>
+<loc>https://example.test/wiki/de/</loc>
+<xhtml:link rel="alternate" hreflang="de" href="https://example.test/wiki/de/"/>
+<xhtml:link rel="alternate" hreflang="en" href="https://example.test/wiki/en/"/>
+<xhtml:link rel="alternate" hreflang="x-default" href="https://example.test/wiki/"/>
+</url>
+<url>
+<loc>https://example.test/wiki/en/</loc>
+<xhtml:link rel="alternate" hreflang="de" href="https://example.test/wiki/de/"/>
+<xhtml:link rel="alternate" hreflang="en" href="https://example.test/wiki/en/"/>
+<xhtml:link rel="alternate" hreflang="x-default" href="https://example.test/wiki/"/>
+</url>
+<url>
+<loc>https://example.test/wiki/de/guide/</loc>
+</url>
+<url>
+<loc>https://example.test/wiki/de/guide/10-last/</loc>
+</url>
+<url>
+<loc>https://example.test/wiki/de/guide/2-second/</loc>
+</url>
+<url>
+<loc>https://example.test/wiki/de/guide/install/</loc>
+</url>
+<url>
+<loc>https://example.test/wiki/en/guide/only-en/</loc>
+</url>
+</urlset>

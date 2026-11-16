@@ -1,0 +1,14 @@
+schema = 1
+purpose = "website"
+
+[names]
+primary = "example.test"
+
+[dns]
+records = ["A", "AAAA"]
+
+[acme]
+method = "http-01"
+
+[csp]
+mode = "static"
