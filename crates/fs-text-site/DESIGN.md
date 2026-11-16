@@ -18,7 +18,13 @@ Page addresses must be lower case `[a-z0-9._-]`: nothing is renamed silently, a 
 `/index.html` (language choice, or the user's own `files/index.html`), `/<lang>/<page>/index.html`, `/<lang>/inhalt/` (de) or `/<lang>/contents/` (other: the full tree; pages show only the short navigation), `/_fs/theme.<sha256-16>.css`, `/_fs/media/<sha256-16>.<ext>`, the passed files, `/404.html`, `/sitemap.xml` (`xhtml:link` alternates, no `lastmod`), `/robots.txt` (only for a site at the root of its host; the file is only read there), `/site.toml` (written back as schema 1 for the fs-release check), `/site-manifest.json` (path, sha256, bytes, media type, kind `page|media|passthrough|generated`, `active` for passthrough, source revision; sorted, no time).
 
 ## Several sites on one domain
-Each site has its own input, output folder, navigation, sitemap, `hreflang` and `x-default`. A site may lie at a subdomain or under a path of the same host (landing at `/`, wiki at `/wiki`); `SiteSet` rejects the same `(name, path)`, a duplicate `site.id`, and an inner site whose first segment is a name the outer site generates itself. The outer site reserves the inner prefix against its own pass-through files. Links between sites are not resolved (a link to another site is a dead link until the configuration names it).
+Each site has its own input, output folder, navigation, sitemap, `hreflang` and `x-default`. A site may lie at a subdomain or under a path of the same host (landing at `/`, wiki at `/wiki`); `SiteSet` rejects the same `(name, path)` (a repeated `site.id` on another host or path is fine; `build-all` then names the output folder after host and prefix), and an inner site whose first segment is a name the outer site generates itself. The outer site reserves the inner prefix against its own pass-through files. Links between sites are not resolved (a link to another site is a dead link until the configuration names it).
+
+## Navigation, folders, links (fix of 2026-11-16)
+* The navigation shows at most 40 entries per list; the links to the contents page and the sitemap are **outside** that budget (`Navigation.extra`) and a list that was cut ends in a hint (`more ...`, link to the contents page).
+* A folder without `index.md` gets a generated overview page (`[build] folder_index`, default on; hand-written pages win; the list is not cut by the navigation budget). **This answers the need E1 of the review**: the real tree of fs-documentation had 291 folders without index and 1505 dead links; with the overviews 76 are left (72 links to `../decisions/...` outside `docs/`, 4 anchors whose heading ids differ from the mkdocs ids, e.g. `#anonymitat` against our `anonymitaet`).
+* Dead links (also anchors) stop the build by default; `[build] dead_links = "list"` lists them all and builds. Publish only with 0.
+* `[[csp.area]].policy` is written into the generated pages of the folder, never looser than the site's policy without `allow_loosen = true` (`csp_rel.rs`).
 
 ## Safety rules (each with a test and a mutation probe)
 * A passed file: path rule, media table by extension (unknown = error), content against extension, size limit, **no symlink anywhere on the way, no hard link, regular files only** (core 1: opened with `O_NOFOLLOW|O_NONBLOCK`, checked on the descriptor, folder swap detected by comparing canonical paths), nothing overwritten, the hash of the second copy must equal the hash measured first.
@@ -52,4 +58,7 @@ Zentinel 26.11_2 sends the type of `mime_guess` 2.0.5 (`from_path(..).first_or_o
 | `prepare` / `write`, `write_parts` | Two-phase Builder (check everything in memory, then write); `Writer` = Builder steps over one context |
 | `outfs` | Unit of work with a ledger (feeds the manifest), fixed modes and times |
 | `gen`, `words` | Template method per generated file |
+| `write_site`, `write_folder` | the same Builder steps: files of the site, overview pages of folders |
+| `folders`, `anchors`, `csp_rel` | Specifications (folders without page, links to anchors, is a policy looser) |
+| `rules` | Value object `[build]` |
 | `report` | Value object with gates (`Policy`: dead links, missing alt, missing media) |

@@ -28,20 +28,18 @@ pub fn sitemap(cfg: &SiteConfig, pages: &BTreeMap<Vec<String>, Vec<Lang>>) -> St
                 "<url>\n<loc>{}</loc>\n",
                 text_string(&abs(l, path))
             ));
-            {
-                // Same set as the HTML pages: all variants (also one) and x-default.
-                for a in langs {
-                    o.push_str(&format!(
-                        "<xhtml:link rel=\"alternate\" hreflang=\"{}\" href=\"{}\"/>\n",
-                        attr_string(a.as_str()),
-                        attr_string(&abs(a, path))
-                    ));
-                }
+            // Same set as the HTML pages: all variants (also one) and x-default.
+            for a in langs {
                 o.push_str(&format!(
-                    "<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"{}/\"/>\n",
-                    attr_string(&origin)
+                    "<xhtml:link rel=\"alternate\" hreflang=\"{}\" href=\"{}\"/>\n",
+                    attr_string(a.as_str()),
+                    attr_string(&abs(a, path))
                 ));
             }
+            o.push_str(&format!(
+                "<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"{}/\"/>\n",
+                attr_string(&origin)
+            ));
             o.push_str("</url>\n");
         }
     }
