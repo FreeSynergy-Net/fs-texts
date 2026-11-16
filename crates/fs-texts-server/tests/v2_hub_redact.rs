@@ -8,9 +8,9 @@
 
 use std::sync::Arc;
 
-use fs_hub::{Config, Daemon};
-use fs_hub_client::{connect_at, HubSession, HubStatus, Manifest};
 use fs_objects::{Envelope, ObjectId, OpenOptions, Store, StoredObject, TursoStore};
+use fs_registry::{Config, Daemon};
+use fs_registry_client::{connect_at, HubSession, HubStatus, Manifest};
 use serde_json::json;
 
 const CATEGORY: &str = "dpv:Content";
@@ -36,7 +36,7 @@ struct Rig {
 async fn rig(open_sensitive: bool) -> Rig {
     let tmp = tempfile::tempdir().unwrap();
     let hub_dir = tmp.path().join("hub-data");
-    let socket = tmp.path().join("run/hub.sock");
+    let socket = tmp.path().join("run/registry.sock");
     let hub = Daemon::spawn(Config::new(socket.clone(), hub_dir.clone())).unwrap();
     let opts = OpenOptions {
         allow_sensitive_unencrypted: open_sensitive,

@@ -1,7 +1,7 @@
 //! The wiki's port for purging a log where there is no hub: every purge is refused as "no hub".
 //!
 //! Pattern: Null Object (of the core port `LogPurge`, the other side of the Strategy chosen by system in `lib.rs`) — the
-//! hub (`fs-hub`) does not run on this system yet, so the answer is the one a missing hub gives anywhere: nothing is purged
+//! hub (`fs-registry`) does not run on this system yet, so the answer is the one a missing hub gives anywhere: nothing is purged
 //! (fail closed), the person is told `no-hub`, and the clean-up of files still works. The hub's own port to Windows lifts
 //! this; the wiki changes nothing then but its dependency.
 

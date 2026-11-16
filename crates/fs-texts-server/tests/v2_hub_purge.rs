@@ -12,8 +12,8 @@ use std::time::Duration;
 
 use common::v2::{p, short, trash, trash_ids};
 use common::{create, set_id, with_provider, ME};
-use fs_hub::{Config, Daemon};
 use fs_objects::{ActivityFilter, Store, TursoStore};
+use fs_registry::{Config, Daemon};
 use fs_texts_core::{TextFormat, Texts, WikiRepo};
 use fs_texts_server::HubPurge;
 
@@ -54,7 +54,7 @@ fn doc_with(t: &fs_texts_core::TextEntry, md: &str) -> fs_texts::Document {
 #[tokio::test(flavor = "current_thread")]
 async fn without_a_hub_purge_is_a_typed_problem_and_nothing_is_purged() {
     let dir = tempfile::tempdir().unwrap();
-    let (repo, store) = wiki_over(dir.path().join("none/hub.sock")).await;
+    let (repo, store) = wiki_over(dir.path().join("none/registry.sock")).await;
     with_provider(repo.clone(), repo, |root| async move {
         let a = create(&root, "a", "NOHUB-SECRET\n").await;
         trash(&root, a.id).await.unwrap();
@@ -74,7 +74,7 @@ async fn without_a_hub_purge_is_a_typed_problem_and_nothing_is_purged() {
 #[tokio::test(flavor = "multi_thread")]
 async fn the_hub_comes_away_with_nothing_of_the_wiki_and_a_dead_hub_is_found_again() {
     let dir = tempfile::tempdir().unwrap();
-    let socket = dir.path().join("run/hub.sock");
+    let socket = dir.path().join("run/registry.sock");
     let hubdata = dir.path().join("hub-data");
     let hub = Daemon::spawn(Config::new(socket.clone(), hubdata.clone())).unwrap();
     let (w, store) = wiki_over(socket.clone()).await;

@@ -32,7 +32,7 @@ tokio = { version = "1", features = ["full"] }
 # The hub (its client and its daemon) still builds only against the Unix transport of fs-interfaces v0.0.1: on Windows the
 # wiki has the port without a hub (`hub_purge_absent.rs`) until the hub itself is ported.
 [target.'cfg(unix)'.dependencies]
-fs-hub-client = { git = "https://github.com/FreeSynergy/fs-hub", tag = "v0.0.1" }
+fs-registry-client = { git = "https://github.com/FreeSynergy/fs-registry", tag = "v0.0.2" }
 
 [target.'cfg(unix)'.dev-dependencies]
-fs-hub = { git = "https://github.com/FreeSynergy/fs-hub", tag = "v0.0.1" }
+fs-registry = { git = "https://github.com/FreeSynergy/fs-registry", tag = "v0.0.2" }

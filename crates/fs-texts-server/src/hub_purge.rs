@@ -1,6 +1,6 @@
 //! The wiki's port for purging a log: through the hub.
 //!
-//! Pattern: Adapter (of the core port `LogPurge` to `fs-hub-client`) — `fs-objects` says a purge before
+//! Pattern: Adapter (of the core port `LogPurge` to `fs-registry-client`) — `fs-objects` says a purge before
 //! the sync loses what the hub must learn (ADR 0029), so the wiki never calls `purge_object` itself:
 //! `HubSession::sync_then_purge` syncs with the hub, checks that no entry of the object is left
 //! unsynced, and only then purges. No hub, a failed sync or entries the hub holds back: nothing is
@@ -15,8 +15,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use fs_hub_client::{connect, connect_at, Error as Hub, HubSession, HubStatus, Manifest};
 use fs_objects::{ObjectId, Store};
+use fs_registry_client::{connect, connect_at, Error as Hub, HubSession, HubStatus, Manifest};
 use fs_texts_core::{LogPurge, PurgeOutcome, Refusal};
 use tokio::sync::Mutex;
 use tokio::time::timeout;

@@ -3,7 +3,7 @@
 //! Pattern: Port (hexagonal) / Adapter — the core never purges a log itself: `fs-objects` says a purge
 //! before the sync loses the hub's mark (ADR 0029), so a program purges the way the hub allows. What
 //! stands behind the port is the program's business (the server uses `HubSession::sync_then_purge` of
-//! `fs-hub-client`); the core knows only this trait, so it depends on no hub. A port that refuses
+//! `fs-registry-client`); the core knows only this trait, so it depends on no hub. A port that refuses
 //! purges nothing (fail closed).
 
 use async_trait::async_trait;

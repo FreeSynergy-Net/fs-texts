@@ -13,8 +13,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use fs_hub::{Config, Daemon};
 use fs_objects::{ActivityFilter, ObjectId, Query, Store, TursoStore};
+use fs_registry::{Config, Daemon};
 use fs_texts_core::{Error, Refusal, Texts, WikiRepo};
 use fs_texts_server::HubPurge;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -85,10 +85,10 @@ async fn fixture(purge_limit: Duration) -> Fixture {
     let wiki_dir = tmp.path().join("wiki");
     let hub_dir = tmp.path().join("hub-data");
     std::fs::create_dir_all(&wiki_dir).unwrap();
-    let hub_socket = tmp.path().join("run/hub.sock");
+    let hub_socket = tmp.path().join("run/registry.sock");
     let hub = Daemon::spawn(Config::new(hub_socket.clone(), hub_dir.clone())).unwrap();
     let chunks = Arc::new(AtomicUsize::new(0));
-    let proxy = tmp.path().join("proxy/hub.sock");
+    let proxy = tmp.path().join("proxy/registry.sock");
     delaying_proxy(&proxy, hub_socket.clone(), chunks.clone());
     let store: Arc<dyn Store> =
         Arc::new(TursoStore::open(wiki_dir.join("objects.db")).await.unwrap());
