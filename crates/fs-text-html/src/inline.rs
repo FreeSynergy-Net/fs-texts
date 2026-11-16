@@ -16,6 +16,8 @@ use fs_text::{Mark, MarkKind, MarkValue};
 struct Open {
     end: usize,
     close: &'static str,
+    /// Is this the open link (a link may not hold another link)?
+    link: bool,
     tag: String,
     san: usize,
 }
@@ -142,7 +144,7 @@ fn open(
         MarkKind::Code => ("<code>".into(), "</code>"),
         MarkKind::Strike => ("<del>".into(), "</del>"),
         _ => {
-            if stack.iter().any(|o| o.close == "</a>") {
+            if stack.iter().any(|o| o.link) {
                 return;
             }
             let Some(t) = link_tag(env, st, m) else {
@@ -155,6 +157,7 @@ fn open(
     stack.push(Open {
         end: m.end,
         close,
+        link: m.kind == MarkKind::Link,
         tag,
         san: clean.depth(),
     });

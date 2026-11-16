@@ -85,7 +85,10 @@ impl Cleaner {
                     continue;
                 }
             }
-            let next = rest[1..].find(['<', '&']).map_or(rest.len(), |p| p + 1);
+            let first = rest.chars().next().map_or(1, char::len_utf8);
+            let next = rest[first..]
+                .find(['<', '&'])
+                .map_or(rest.len(), |p| p + first);
             let (chunk, adv) = if rest.starts_with('&') {
                 let n = entity_len(rest);
                 (&rest[..n.max(1)], n.max(1))
