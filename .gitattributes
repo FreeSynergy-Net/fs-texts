@@ -1,0 +1,6 @@
+# Byte-exact tests (include_str! of fixtures, round trips) need the same bytes on every system: text files are checked out
+# with LF also on Windows (runners have core.autocrlf=true), binary fixtures are left alone.
+* text=auto eol=lf
+*.db binary
+*.db-wal binary
+*.png binary
