@@ -163,7 +163,7 @@ fn u4_u5_u6_nothing_is_cut_and_the_way_starts_with_the_text() {
 }
 
 #[test]
-fn u7_u8_table_text_is_body_size_and_the_code_block_is_a_framed_box() {
+fn u7_u8_table_text_is_body_size_and_the_code_block_is_a_box_with_a_ground() {
     let _one = serial();
     let (dir, _keep) = shots();
     let r = opened(1400.0);
@@ -189,12 +189,13 @@ fn u7_u8_table_text_is_body_size_and_the_code_block_is_a_framed_box() {
         c1 - c0,
         p1 - p0
     );
-    // U8: the code block is a framed box of one line (not 81 px), its frame lines are not the colour of the page.
+    // U8: the code block is a box of one line (not 81 px) with its own ground (0.0.20: light blue, not the colour of
+    // the page): the run of non-white pixels down the column x = 900 is as high as one line plus its padding.
     let grey = |y: u32| p.2[(y * p.0 + 900) as usize * p.3] < 250;
-    let top = (850..1000).find(|&y| grey(y)).expect("top frame line");
+    let top = (850..1000).find(|&y| grey(y)).expect("top of the box");
     let bottom = (top + 5..1000)
-        .find(|&y| grey(y))
-        .expect("bottom frame line");
+        .find(|&y| !grey(y))
+        .expect("bottom of the box");
     assert!(
         (30..=56).contains(&(bottom - top)),
         "code block {} px high",
@@ -202,7 +203,7 @@ fn u7_u8_table_text_is_body_size_and_the_code_block_is_a_framed_box() {
     );
     assert!(
         p.2[(900 * p.0 + 482) as usize * p.3] < 250,
-        "left frame line"
+        "left edge of the box"
     );
 }
 

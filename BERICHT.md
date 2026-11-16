@@ -1,7 +1,7 @@
 # BERICHT wiki-0013 (fs-wiki 0.0.13), Abnahme U1-U8 gegen fs-components 0.0.20
 
 ## Stand
-- Pin in `crates/fs-wiki-app/Cargo.toml`: `tag = "v0.0.20"` (Tag existiert noch nicht). Geprüft wurde (neu) gegen Commit 3d25106 (editor-fixes; Bilder neu erzeugt), vorher 6c13308 (editor-fixes, Zweig unreviewed/editor-0020) über einen lokalen Pfad-Austausch der Abhängigkeiten (nicht committet; saubere Kopie mit `git archive` nach /srv/FreeSynergy/.scratch/comp-6c13308). Cargo.lock ist deshalb NICHT neu aufgelöst (nur fs-wiki-Versionen 0.0.13); nach dem Tag: `cargo update -p fs-components` bzw. Lock neu, dann CI.
+- Pin in `crates/fs-wiki-app/Cargo.toml`: `tag = "v0.0.20"` (Tag existiert, 6ae652c). Geprüft wurde (neu) gegen Commit 3d25106 (editor-fixes; Bilder neu erzeugt), vorher 6c13308 (editor-fixes, Zweig unreviewed/editor-0020) über einen lokalen Pfad-Austausch der Abhängigkeiten (nicht committet; saubere Kopie mit `git archive` nach /srv/FreeSynergy/.scratch/comp-6c13308). Cargo.lock ist deshalb NICHT neu aufgelöst (nur fs-wiki-Versionen 0.0.13); nach dem Tag: `cargo update -p fs-components` bzw. Lock neu, dann CI.
 - Gates lokal gegen 6c13308: fmt ok, clippy -D warnings ok, `cargo test --workspace --all-features --locked` ok (alle).
 
 ## Abnahme (Bilder: /srv/FreeSynergy/.scratch/wiki-0013-bilder/, Test tests/window_acceptance.rs, Notion-Frontend, Fensterstile, Seite des Nutzers)
@@ -10,7 +10,7 @@
 - U4/U5: u4-u6-breite-1900.png: Seiten-Icon ganz, unter der Kopfzeile; Gliederungsmarke rechts (Strich bei x~1870) ganz.
 - U6: u4-u6-breite-1900.png, u6-breite-1300.png, u6-volle-breite-1900.png: Brotkrume und Titel beginnen am selben x (726 bei 1900 px); Spalte ~660 px breit, mittig; volle Breite beginnt neben der Seitenleiste (x 288), Brotkrume mit.
 - U7: u7-u8-tabelle-code.png: Tabellentext so hoch wie Absatz (Test: gleich hoch, 11 px).
-- U8: Code-Block hat Rahmen, eine Zeile (~50 px statt 81). EHRLICH: der Hintergrund ist im Bild NICHT sichtbar, Grund = Token --surface, im Notion-Stil weiß (255,255,255) wie die Seite. Bedarf an fs-components/Stil: Grund dort abgesetzt (z.B. Notion-Grau).
+- U8: Code-Block hat Rahmen, eine Zeile (~50 px statt 81). 0.0.20 (Tag): Kasten hat jetzt hellblauen Grund, kein eigener Rahmen; Test auf Grund umgestellt (50 px hoch).
 
 ## Angepasste Tests (Folge von 0.0.20)
 - editor_width: Editor ohne Rahmen, Breite am umbrochenen Absatz (>= 500 px, gemessen 577 bei Spalte 732).
