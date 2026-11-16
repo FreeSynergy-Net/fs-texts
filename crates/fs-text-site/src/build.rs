@@ -155,7 +155,7 @@ pub fn build_all(
     for s in &sources {
         let mut o = opt.clone();
         o.nested = set.nested_below(s.config());
-        let id = s.config().id.clone();
+        let id = set.out_name(s.config());
         let r = build(s, &out_root.join(&id), &o)?;
         out.push((id, r));
     }

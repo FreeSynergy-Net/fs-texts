@@ -48,12 +48,29 @@ impl SiteSet {
         &self.sites
     }
 
+    /// The name of the output folder of `site` below the output root: its `id` if no other site
+    /// has it, else `host` and prefix (`example.test`, `example.test_wiki`), so two sites of the
+    /// same name on different domains never write into one folder.
+    #[must_use]
+    pub fn out_name(&self, site: &SiteConfig) -> String {
+        let same = self.sites.iter().filter(|o| o.id == site.id).count();
+        if same <= 1 {
+            return site.id.clone();
+        }
+        let mut n = site.host.as_str().to_string();
+        for seg in site.path_prefix.segments() {
+            n.push('_');
+            n.push_str(seg);
+        }
+        n
+    }
+
     /// The first segments (below the prefix of `site`) at which other sites on a shared name
     /// lie inside `site`: the pass-through of `site` may not use them.
     #[must_use]
     pub fn nested_below(&self, site: &SiteConfig) -> Vec<String> {
         let mut out = Vec::new();
-        for o in self.sites.iter().filter(|o| o.id != site.id) {
+        for o in self.sites.iter().filter(|o| *o != site) {
             if shares_name(site, o)
                 && site.path_prefix.is_prefix_of(&o.path_prefix)
                 && o.path_prefix != site.path_prefix
@@ -80,10 +97,7 @@ fn generated_top(s: &SiteConfig) -> Vec<String> {
 }
 
 fn check_pair(a: &SiteConfig, b: &SiteConfig, errs: &mut Vec<ConfigError>) {
-    if a.id == b.id {
-        errs.push(ConfigError::DuplicateId(a.id.clone()));
-        return;
-    }
+    // The same `site.id` is fine on another host or path: only host and path can collide.
     let Some(name) = a.names.iter().find(|n| b.names.contains(n)) else {
         return;
     };

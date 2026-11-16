@@ -52,12 +52,34 @@ fn an_alias_of_one_site_that_is_the_host_of_another_collides() {
 }
 
 #[test]
-fn same_id_twice_is_refused() {
-    let r = SiteSet::new(vec![
-        site("one", "example.test", "/", "[\"de\"]"),
-        site("one", "other.example.test", "/", "[\"de\"]"),
-    ]);
-    assert!(matches!(r.unwrap_err()[0], ConfigError::DuplicateId(_)));
+fn the_same_id_on_two_domains_is_fine_and_gets_two_folders() {
+    let a = site("wiki", "example.test", "/", "[\"de\"]");
+    let b = site("wiki", "other.example.test", "/", "[\"de\"]");
+    let c = site("wiki", "other.example.test", "/x", "[\"de\"]");
+    let set =
+        SiteSet::new(vec![a.clone(), b.clone(), c.clone()]).expect("only host and path collide");
+    assert_eq!(set.out_name(&a), "example.test");
+    assert_eq!(set.out_name(&b), "other.example.test");
+    assert_eq!(set.out_name(&c), "other.example.test_x");
+    // the nesting of c below b is still found although the ids are equal
+    assert_eq!(set.nested_below(&b), vec!["x".to_string()]);
+    // counter-probe: the same host and path with the same id still collides
+    let r = SiteSet::new(vec![a.clone(), a]);
+    assert!(matches!(
+        r.unwrap_err()[0],
+        ConfigError::SiteCollision { .. }
+    ));
+}
+
+#[test]
+fn a_lone_id_names_its_folder() {
+    let a = site("wiki", "example.test", "/", "[\"de\"]");
+    let b = site("blog", "example.test", "/blog", "[\"de\"]");
+    let set = SiteSet::new(vec![a.clone(), b.clone()]).unwrap();
+    assert_eq!(
+        (set.out_name(&a).as_str(), set.out_name(&b).as_str()),
+        ("wiki", "blog")
+    );
 }
 
 #[test]

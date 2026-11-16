@@ -61,8 +61,6 @@ pub enum ConfigError {
         /// The shared path (`/` for the root).
         path: String,
     },
-    /// The same `site.id` twice.
-    DuplicateId(String),
     /// A site below another one would sit on a name the outer site generates.
     NestedShadowed {
         /// The inner site.
@@ -99,7 +97,6 @@ impl fmt::Display for ConfigError {
             Self::SiteCollision { a, b, name, path } => {
                 write!(f, "sites {a:?} and {b:?} both claim {name}{path}")
             }
-            Self::DuplicateId(id) => write!(f, "site.id {id:?} is used by two sites"),
             Self::NestedShadowed {
                 inner,
                 outer,
