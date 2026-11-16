@@ -11,7 +11,6 @@
 
 mod page_rig;
 
-use fs_components::blinc::layout::prelude::RenderTree;
 use page_rig::rig;
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // pixel positions of a window: small, not negative
@@ -22,27 +21,8 @@ fn to_px(v: f32) -> u32 {
 /// The user's cells and list, ticked and unticked, in the German window.
 const BOXES: &str = "# Aufgaben\n\n| Name | Test |\n| --- | :---: |\n| Kal | - [ ] Test? |\n| Ada | [x] |\n\n- [ ] offen\n- [x] erledigt\n";
 
-/// The window laid out as the picture lays it out: the same element, the style sheet of the program with Blinc's default look
-/// ahead of it, the rules for layout applied.
-fn window_layout(r: &page_rig::Rig, w: f32, h: f32) -> RenderTree {
-    use fs_components::blinc::layout::css_parser::Stylesheet;
-    let mut tree = RenderTree::from_element(&r.app.build(w, h));
-    let bundle = fs_components_render::bundle(&r.app.styles());
-    let vars = fs_components::blinc::theme::ThemeState::get().to_css_variable_map();
-    let mut css = String::from(fs_components::blinc::layout::ua_styles::UA_STYLES);
-    for sheet in &bundle.css_sources {
-        css.push('\n');
-        css.push_str(sheet);
-    }
-    tree.set_stylesheet(Stylesheet::parse_with_variables(&css, &vars).expect("style sheet"));
-    tree.apply_stylesheet_layout_overrides();
-    tree.apply_stylesheet_base_styles();
-    tree.compute_layout(w, h);
-    tree
-}
-
 /// (x, y, width, height) of the element with this id in the window of `width` x `height`.
-fn bounds_of(tree: &RenderTree, id: &str) -> (u32, u32, u32, u32) {
+fn bounds_of(tree: &fs_components::blinc::layout::prelude::RenderTree, id: &str) -> (u32, u32, u32, u32) {
     let node = tree
         .query_by_id(id)
         .unwrap_or_else(|| panic!("no element {id}"));
@@ -57,7 +37,7 @@ fn the_picture_shows_the_state_of_every_box_with_the_styles_of_the_program() {
     r.make("aufgaben.md", BOXES);
     r.open("aufgaben.md");
     r.warm_up();
-    let tree = window_layout(&r, 1000.0, 700.0);
+    let tree = r.window_layout(1000.0, 700.0);
     let dir =
         std::env::var_os("FS_WIKI_SHOTS").map_or_else(std::env::temp_dir, std::path::PathBuf::from);
     std::fs::create_dir_all(&dir).unwrap();

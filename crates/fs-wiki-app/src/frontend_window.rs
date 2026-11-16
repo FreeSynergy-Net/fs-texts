@@ -50,6 +50,8 @@ pub(crate) struct Switcher {
     pub(crate) fresh: Mutex<HashMap<String, String>>,
     /// The state the menus were last set for.
     menu_state: Mutex<Option<PageState>>,
+    /// The list (path, title) the page tree was last made from.
+    listed: Mutex<Vec<(String, String)>>,
 }
 
 impl Switcher {
@@ -84,6 +86,24 @@ impl Switcher {
         self.app.set_menus(all, move |id| me.chosen(id))
     }
 
+    /// The list of the reader as the tree shows it.
+    fn list_now(&self) -> Vec<(String, String)> {
+        self.base.with_reader(|r| {
+            r.entries()
+                .iter()
+                .map(|e| (e.path.clone(), e.title.clone()))
+                .collect()
+        })
+    }
+
+    /// Make the page tree again from the list of the reader (the list read now is what the tree shows) and draw.
+    fn remake_tree(&self) {
+        let layout = self.shown().layout();
+        drop(self.base.clone().layout(layout, self.setup.labels.clone()));
+        *self.listed.lock().unwrap_or_else(PoisonError::into_inner) = self.list_now();
+        self.base.refresh();
+    }
+
     /// Set the menus again when what decides them changed (a page was opened, an edit began or ended): the reader changes by
     /// clicks the window does not see, so a small thread of the window looks now and then. A menu that is open is left
     /// alone (setting menus closes it); the next look sets it.
@@ -95,6 +115,11 @@ impl Switcher {
                     .app
                     .with_shell(fs_components_app::Shell::open_menu)
                     .is_some();
+                // The list was read again by whoever changed the pages (the reader holds it, the tree is a copy): the tree follows.
+                let tree_old = *me.listed.lock().unwrap_or_else(PoisonError::into_inner) != me.list_now();
+                if tree_old {
+                    me.remake_tree();
+                }
                 let last = *me.menu_state.lock().unwrap_or_else(PoisonError::into_inner);
                 if !open && last != Some(me.page_state()) && me.setup.pages.is_some() {
                     let _ = me.install(me.shown());
@@ -131,6 +156,7 @@ impl Switcher {
             .base
             .clone()
             .layout(chosen.layout(), self.setup.labels.clone());
+        *self.listed.lock().unwrap_or_else(PoisonError::into_inner) = self.list_now();
         // The page is read again: the plain frontend has the language bar in the text of the page, the others draw it
         // themselves. An edit in progress is left alone.
         widget.with_reader(|r| {
@@ -158,11 +184,7 @@ impl Switcher {
         let me = Arc::downgrade(self);
         pages.on_saved(Arc::new(move || {
             if let Some(me) = me.upgrade() {
-                std::thread::spawn(move || {
-                    let layout = me.shown().layout();
-                    drop(me.base.clone().layout(layout, me.setup.labels.clone()));
-                    me.base.refresh();
-                });
+                std::thread::spawn(move || me.remake_tree());
             }
         }));
     }
@@ -234,7 +256,9 @@ pub fn window_with_modal(
         shown: Mutex::new(shown),
         fresh: Mutex::default(),
         menu_state: Mutex::default(),
+        listed: Mutex::default(),
     });
+    *switcher.listed.lock().unwrap_or_else(PoisonError::into_inner) = switcher.list_now();
     switcher.watch_saves();
     switcher.install(shown)?;
     switcher.watch_state();
