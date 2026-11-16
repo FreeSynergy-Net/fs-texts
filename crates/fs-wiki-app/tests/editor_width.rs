@@ -45,7 +45,18 @@ impl DocumentSource for One {
 /// The picture of the editing window in `frontend`: (width, left, right) of the editor's outer lines on a row through its
 /// lower part, searched between `from` and `to` (the column), as pixels.
 fn measure(frontend: Frontend, from: u32, to: u32, rows: std::ops::Range<u32>) -> (u32, u32, u32) {
-    let source = Arc::new(One(Mutex::new("# A\n".into())));
+    measure_text(frontend, "# A\n", from, to, rows)
+}
+
+/// As [`measure`], with the page text given.
+fn measure_text(
+    frontend: Frontend,
+    text: &str,
+    from: u32,
+    to: u32,
+    rows: std::ops::Range<u32>,
+) -> (u32, u32, u32) {
+    let source = Arc::new(One(Mutex::new(text.into())));
     let reader = ReaderWidget::new(source, Labels::default(), None);
     let setup = Setup {
         labels: WikiLabels::default(),
@@ -89,8 +100,16 @@ fn the_editor_fills_the_column_of_confluence_notion_and_classic() {
 }
 
 #[test]
-fn the_blocks_of_notion_use_the_reading_column() {
-    // Notion: the page is 266..1000 wide; the block of the text is a box in its reading column.
-    let (width, ..) = measure(Frontend::Notion, 266, 998, 110..600);
-    assert!(width >= 600, "Notion: {width} px of 732");
+fn the_text_of_notion_runs_over_the_reading_column() {
+    // Notion (0.0.20: one writing surface, no frame around a block): the page is 266..1000 wide; a long paragraph is
+    // wrapped at the reading column, so its widest line (the ink) fills the column instead of a narrow strip.
+    let long = "word ".repeat(400);
+    let (width, ..) = measure_text(
+        Frontend::Notion,
+        &format!("# A\n\n{long}\n"),
+        266,
+        998,
+        110..600,
+    );
+    assert!(width >= 500, "Notion: {width} px of 732");
 }

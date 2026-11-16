@@ -198,10 +198,12 @@ fn the_table_of_the_user_test_does_not_break_in_the_window() {
         }
         inside = ink;
     }
+    // Header, the row with the box (one line), the third row: its long words wrap into two lines at the body size of the
+    // table text (fs-components 0.0.20, U7), so 1 + 1 + 2 lines; a broken box row would make more.
     assert_eq!(
         runs,
-        3,
-        "header and two rows are one line each; picture {}",
+        4,
+        "header, the box row (one line) and a wrapped row (two lines); picture {}",
         file.display()
     );
 }
