@@ -1,0 +1,15 @@
+[package]
+name = "fs-text-html"
+description = "FreeSynergy text to HTML: the Exporter for HTML, the page frame with a short navigation, and the safe pass-through of user files"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+fs-text = { path = "../fs-text" }
+sha2 = "0.10"
+
+[dev-dependencies]
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
+proptest = "1"
+tempfile = "3"

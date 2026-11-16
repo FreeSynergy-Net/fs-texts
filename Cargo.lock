@@ -1752,6 +1752,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-text-html"
+version = "0.0.12"
+dependencies = [
+ "fs-text",
+ "proptest",
+ "pulldown-cmark 0.13.6",
+ "sha2 0.10.9",
+ "tempfile",
+]
+
+[[package]]
 name = "fs-types"
 version = "0.0.1"
 source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19#90e62c30ad3af06beaa4edabce14e1448fdce9f3"
