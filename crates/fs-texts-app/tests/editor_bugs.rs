@@ -77,40 +77,82 @@ fn typed(tree: &mut RenderTree, text: &str) {
     tree.process_pending_subtree_rebuilds();
 }
 
-/// The caret (blue) and the last ink of `text` typed into a new block, and the caret of the still empty block.
-fn typed_probe(dir: &std::path::Path, n: usize, text: &str) -> (u32, u32, u32) {
+/// How often the picture is taken again while no caret is on it: the caret blinks (400 ms on, 400 ms off, by wall clock), and a
+/// slow runner (software GPU) can take the picture in the dark phase. Two pictures 150 ms apart cannot both be dark.
+const SHOTS: usize = 8;
+
+/// First blue column of the caret in the rows of the new block; the picture is taken again while the caret is dark.
+fn caret_in(r: &Rig, dir: &std::path::Path, name: &str) -> (Shot, Option<u32>) {
+    let rows = 395..425;
+    let mut p = shoot(r, dir, name);
+    for _ in 1..SHOTS {
+        if let Some(x) = (480..900).find(|&x| rows.clone().any(|y| blue(at(&p, x, y)))) {
+            return (p, Some(x));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(150));
+        p = shoot(r, dir, name);
+    }
+    let x = (480..900).find(|&x| rows.clone().any(|y| blue(at(&p, x, y))));
+    (p, x)
+}
+
+/// The caret (blue) and the last ink of `text` typed into a new block, and the caret of the still empty block (each `None`
+/// when it is not on the picture even after `SHOTS` pictures).
+fn typed_probe(
+    dir: &std::path::Path,
+    n: usize,
+    text: &str,
+) -> (Option<u32>, Option<u32>, Option<u32>) {
     let (r, mut tree) = editing();
     r.reader.focus_block(0, 18);
     key(&mut tree, 13, false, false);
-    let empty = shoot(&r, dir, "b1-0-neuer-block.png");
+    let (_, empty) = caret_in(&r, dir, "b1-0-neuer-block.png");
     typed(&mut tree, text);
-    let p = shoot(&r, dir, &format!("b1-vorher-{n}.png"));
-    let rows = 395..425;
-    let first_blue = |p: &Shot| (480..900).find(|&x| rows.clone().any(|y| blue(at(p, x, y))));
+    let (p, caret) = caret_in(&r, dir, &format!("b1-vorher-{n}.png"));
     let last_ink = (480..900)
         .rev()
-        .find(|&x| rows.clone().any(|y| ink(at(&p, x, y))));
-    (
-        first_blue(&p).expect(text),
-        last_ink.expect(text),
-        first_blue(&empty).expect("caret of the empty block"),
-    )
+        .find(|&x| (395..425).any(|y| ink(at(&p, x, y))));
+    (caret, last_ink, empty)
+}
+
+/// The room behind the last ink (px): three quarters of the advance of an "m", measured as caret("m") - caret(empty block).
+/// The measurement is clamped to 6..=12 px: 6 keeps the 5 px of the CI runner green, 12 keeps the fault of the hand test
+/// (about 19 px) red even when the measurement is bad. When the advance of the "m" cannot be measured or is not plausible (8..=20 px), the room is 9 px (3/4 of
+/// the 12 px advance measured here) and the reason is part of the text that comes back.
+fn room_for_glyphs(dir: &std::path::Path) -> (u32, String) {
+    const FALLBACK: u32 = 9;
+    let (caret, _, start) = typed_probe(dir, 99, "m");
+    match (caret, start) {
+        (Some(c), Some(s)) if (8..=20).contains(&c.saturating_sub(s)) => {
+            let w = c - s;
+            (
+                (w * 3 / 4).clamp(6, 12),
+                format!("3/4 of the width of an \"m\", {w} px"),
+            )
+        }
+        _ => (
+            FALLBACK,
+            format!(
+                "fallback, could not measure a plausible (8..=20 px) advance of \"m\" (caret(m)={caret:?}, caret(empty)={start:?}, picture \
+                 {}x{}, {SHOTS} pictures each); falling back to {FALLBACK} px",
+                SIZE.0, SIZE.1
+            ),
+        ),
+    }
 }
 
 /// b1 (user: with ">" the cursor stands about 0.5 cm too far in front; suspected: wrong width of the glyph): for several strings typed
 /// into a new block the caret stands right behind the last ink. How far "right behind" may be is measured in the width of a
 /// character of the renderer at hand, not in fixed pixels: at most three quarters of the advance of an "m" (12 px here, so
-/// 9 px). Measured: 2 px locally (3 px for "|" and "<>"), 5 px for "|" on the CI runner (other font rendering, software GPU);
-/// the fault of the hand test is about 19 px (a character off). A trailing space has no ink of its own, so the last ink is the
-/// one before it: a space is one space wide more, 8 px at most (unchanged).
+/// 9 px; see `room_for_glyphs` for the bounds and the fallback). Measured: 2 px locally (3 px for "|" and "<>"), 5 px for "|"
+/// on the CI runner (other font rendering, software GPU); the fault of the hand test is about 19 px (a character off). A
+/// trailing space has no ink of its own, so the last ink is the one before it: a space is one space wide more, 8 px at most.
 /// Not red in this rig (see the README): the guard that stays for the spike on inline rendering.
 #[test]
 fn b1_the_caret_stands_right_behind_what_was_typed() {
     let _one = serial();
     let (dir, _keep) = shots();
-    let (m_caret, _, m_start) = typed_probe(&dir, 99, "m");
-    let m_width = m_caret - m_start;
-    let near = m_width * 3 / 4;
+    let (near, how) = room_for_glyphs(&dir);
     for (n, text) in [
         ">", "> ", ">>>", "<>", "a>b", "abc", "W>", "m", "#", "|", "-", "iii",
     ]
@@ -118,11 +160,17 @@ fn b1_the_caret_stands_right_behind_what_was_typed() {
     .enumerate()
     {
         let (caret, last_ink, _) = typed_probe(&dir, n, text);
+        let (Some(caret), Some(last_ink)) = (caret, last_ink) else {
+            panic!(
+                "{text:?}: no caret/ink on the picture after {SHOTS} pictures (caret x={caret:?}, last ink x={last_ink:?}); \
+                 room would be {near} px ({how})"
+            );
+        };
         let room = if text.ends_with(' ') { 8 } else { near };
         assert!(
             caret + 1 >= last_ink && caret.saturating_sub(last_ink) <= room,
             "{text:?}: the caret (x={caret}) stands right behind the text (last ink x={last_ink}); \
-             allowed {room} px (3/4 of the width of an \"m\", {m_width} px)"
+             allowed {room} px ({how})"
         );
     }
 }
