@@ -1,0 +1,112 @@
+//! Open a file of the shared folder safely, and copy it byte for byte.
+//!
+//! Pattern: Facade over the copy sequence (open and check, stream through the probe and the
+//! hash, write new). The source must be a plain file reached without any link on the way,
+//! with one name only; the output file is created new, never over an existing one.
+
+use super::error::PassError;
+use super::media::{MediaType, Prober};
+use super::path::PassPath;
+use sha2::{Digest, Sha256};
+use std::fs::{self, File, OpenOptions};
+use std::io::{Read, Write};
+use std::path::Path;
+
+/// Limits of one copy.
+#[derive(Clone, Copy, Debug)]
+pub struct Limits {
+    /// Biggest file in bytes.
+    pub max_bytes: u64,
+}
+
+impl Default for Limits {
+    fn default() -> Self {
+        Self { max_bytes: 10 * 1024 * 1024 }
+    }
+}
+
+/// What was copied.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Copied {
+    /// Size in bytes.
+    pub bytes: u64,
+    /// SHA-256 of the bytes (the same for source and output).
+    pub sha256: [u8; 32],
+    /// The media type of the extension.
+    pub media: MediaType,
+}
+
+/// Copy `root/rel` to `dest/rel` unchanged, after all checks.
+pub fn copy_file(root: &Path, rel: &PassPath, dest: &Path, limits: Limits) -> Result<Copied, PassError> {
+    let media = MediaType::from_extension(&rel.extension().unwrap_or_default())?;
+    let mut src = open_plain(root, rel)?;
+    let to = dest.join(rel.as_str());
+    if let Some(parent) = to.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let mut out = OpenOptions::new().write(true).create_new(true).open(&to)?;
+    let r = stream(&mut src, &mut out, media, limits);
+    if r.is_err() {
+        drop(out);
+        let _ = fs::remove_file(&to);
+    }
+    r
+}
+
+fn stream(src: &mut impl Read, out: &mut impl Write, media: MediaType, limits: Limits) -> Result<Copied, PassError> {
+    let mut probe = Prober::new(media);
+    let mut hash = Sha256::new();
+    let mut buf = vec![0u8; 64 * 1024];
+    let mut total = 0u64;
+    loop {
+        let n = src.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        total += n as u64;
+        if total > limits.max_bytes {
+            return Err(PassError::TooBig(limits.max_bytes));
+        }
+        probe.feed(&buf[..n])?;
+        hash.update(&buf[..n]);
+        out.write_all(&buf[..n])?;
+    }
+    probe.finish()?;
+    out.flush()?;
+    Ok(Copied { bytes: total, sha256: hash.finalize().into(), media })
+}
+
+#[cfg(unix)]
+fn open_plain(root: &Path, rel: &PassPath) -> Result<File, PassError> {
+    use std::os::unix::fs::MetadataExt;
+    let mut p = root.to_path_buf();
+    let n = rel.segments().count();
+    for (i, seg) in rel.segments().enumerate() {
+        p.push(seg);
+        let m = fs::symlink_metadata(&p)?;
+        if m.file_type().is_symlink() {
+            return Err(PassError::NotRegular("symbolic link"));
+        }
+        if i + 1 < n && !m.is_dir() {
+            return Err(PassError::NotRegular("a part of the path is not a folder"));
+        }
+    }
+    let before = fs::symlink_metadata(&p)?;
+    if !before.is_file() {
+        return Err(PassError::NotRegular("not a regular file"));
+    }
+    if before.nlink() > 1 {
+        return Err(PassError::NotRegular("more than one name (hard link)"));
+    }
+    let f = File::open(&p)?;
+    let after = f.metadata()?;
+    if !after.is_file() || after.ino() != before.ino() || after.dev() != before.dev() {
+        return Err(PassError::NotRegular("file changed while opening"));
+    }
+    Ok(f)
+}
+
+#[cfg(not(unix))]
+fn open_plain(_: &Path, _: &PassPath) -> Result<File, PassError> {
+    Err(PassError::NotRegular("only supported on Unix"))
+}

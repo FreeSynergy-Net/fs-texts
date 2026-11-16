@@ -13,12 +13,16 @@
 
 pub mod escape;
 pub mod exporter;
+pub mod frame;
+pub mod nav;
 pub mod page;
+pub mod pass;
 pub mod raw;
 pub mod report;
 pub mod resolve;
 pub mod slug;
 pub mod state;
+pub mod theme;
 pub mod url;
 pub mod words;
 
@@ -29,6 +33,8 @@ mod table;
 mod tree;
 
 pub use exporter::{HtmlExporter, HtmlExporterBuilder};
+pub use frame::{render_page, Alternate, Csp, Frame};
+pub use nav::{NavNode, Navigation};
 pub use page::{HtmlPage, TocEntry};
 pub use raw::RawHtmlPolicy;
 pub use report::{Problem, Report};
