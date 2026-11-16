@@ -28,6 +28,7 @@ pub const EDITOR_STYLES: &str = "
 .fs-wk-a-top { display: none; height: 0px; }
 .fs-rd-bar .cn-button--primary + .cn-button--primary { background: var(--surface); color: var(--text-primary); border-width: 1px; border-color: var(--border); }
 .fs-texts-bar { display: flex; flex-direction: row; align-items: center; gap: var(--space-4); width: 100%; }
+.fs-texts-banner { display: flex; flex-direction: row; align-items: center; padding: 8px 16px; background: var(--warning-bg); border-bottom-width: 1px; border-color: var(--border); font-size: 14px; color: var(--text-primary); }
 .fs-texts-brand { display: flex; flex-direction: row; align-items: center; gap: var(--space-2); font-weight: 700; }
 ";
 
@@ -38,6 +39,8 @@ pub(crate) struct ReaderSurface {
     pub(crate) confluence: AtomicBool,
     /// What the window says while the wiki has no page, and what its button does; none = the reader's layout always.
     pub(crate) empty: Mutex<Option<(Arc<dyn Fn() -> EmptyWords + Send + Sync>, OnNew)>>,
+    /// Why pages cannot be changed now (read only, server lost); none = they can. Shown as a line above the reader.
+    pub(crate) banner: Mutex<Option<Arc<dyn Fn() -> Option<String> + Send + Sync>>>,
     program: String,
     search: SearchField,
 }
@@ -63,6 +66,7 @@ impl ReaderSurface {
             modal: Arc::new(ModalSlot::default()),
             confluence: AtomicBool::new(shown == Frontend::Confluence),
             empty: Mutex::default(),
+            banner: Mutex::default(),
             program: program.to_owned(),
             search,
         }
@@ -90,7 +94,32 @@ impl Surface for ReaderSurface {
         if none_at_all && let Some((words, on_new)) = empty {
             return Box::new(empty_view(&words(), &on_new, width, height));
         }
-        Box::new(widget.build(width, height))
+        // Why pages cannot be changed stands above the page: the layouts of the components draw no Edit button at all then.
+        let why = self
+            .banner
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
+            .and_then(|why| why());
+        let Some(why) = why else {
+            return Box::new(widget.build(width, height));
+        };
+        Box::new(
+            div()
+                .w(width)
+                .h(height)
+                .flex_col()
+                .child(
+                    div()
+                        .id("fs-texts-banner")
+                        .class("fs-texts-banner")
+                        .w(width)
+                        .h(BANNER_HEIGHT)
+                        .flex_shrink_0()
+                        .child(text(why)),
+                )
+                .child(widget.build(width, (height - BANNER_HEIGHT).max(0.0))),
+        )
     }
 
     fn styles(&self) -> String {
@@ -128,3 +157,6 @@ const BAR_HEIGHT: f32 = 52.0;
 const SEARCH_WIDTH: f32 = 360.0;
 /// The size of the program icon in the bar (the size the layout's own bar used).
 const BRAND_ICON: f32 = 22.0;
+
+/// The height of the line that says why pages cannot be changed.
+const BANNER_HEIGHT: f32 = 36.0;

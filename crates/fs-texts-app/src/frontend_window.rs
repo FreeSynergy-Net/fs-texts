@@ -57,6 +57,8 @@ pub(crate) struct Switcher {
     pub(crate) link: Option<Link>,
     /// Why the server cannot be used now (the sentence of the status line); none = it answers.
     pub(crate) lost: Mutex<Option<String>>,
+    /// "Reconnect" was chosen and is under way (a second click does nothing: it would open a second window).
+    pub(crate) reconnecting: AtomicBool,
 }
 
 impl Switcher {

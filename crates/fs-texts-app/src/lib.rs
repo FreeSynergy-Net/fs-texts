@@ -24,6 +24,7 @@ pub mod heads;
 pub mod import;
 mod import_walk;
 mod lang_words;
+pub mod logged_starter;
 pub mod map;
 mod mode_admin;
 pub mod mode_link;

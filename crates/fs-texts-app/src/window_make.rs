@@ -2,7 +2,7 @@
 //!
 //! Pattern: Factory — one function per way to make the window (plain, with the slot of its modal, with a link to the server).
 
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use fs_components_app::{AppError, AppWidget, Screen, Status, Surface};
@@ -75,6 +75,7 @@ pub fn window_linked(
         listed: Mutex::default(),
         link,
         lost: Mutex::default(),
+        reconnecting: AtomicBool::new(false),
     });
     *switcher
         .listed

@@ -91,6 +91,14 @@ pub(crate) fn empty_view(words: &EmptyWords, on_new: &OnNew, width: f32, height:
 }
 
 impl Switcher {
+    /// Why pages cannot be changed now: the server is gone, or the wiki is read only (the reason of the locked menu entries).
+    pub(crate) fn why_locked(&self) -> Option<String> {
+        let t = self.texts();
+        self.lost()
+            .map(|_| t.plain("reason-lost"))
+            .or_else(|| self.setup.pages.as_ref().and_then(|p| p.locked_reason()))
+    }
+
     /// The words and the button of the view that stands in for an empty wiki (`window_empty.rs`).
     pub(crate) fn set_empty_state(self: &Arc<Self>) {
         let (words, click) = (Arc::downgrade(self), Arc::downgrade(self));
@@ -120,6 +128,13 @@ impl Switcher {
                 me.page_action(PAGE_NEW);
             }
         });
+        let why = Arc::downgrade(self);
+        *self
+            .surface
+            .banner
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner) =
+            Some(Arc::new(move || why.upgrade()?.why_locked()));
         *self
             .surface
             .empty

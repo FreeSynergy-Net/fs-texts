@@ -8,7 +8,9 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-use fs_interfaces::rpc::{CommandStarter, Expected, FACET_FLAG, companion_path};
+use fs_interfaces::rpc::{Expected, FACET_FLAG, companion_path};
+
+use crate::logged_starter::{LoggedStarter, said_by_server};
 use fs_texts_client::{RpcTexts, Timeouts};
 
 use crate::args::{Args, HELP, parse};
@@ -115,10 +117,19 @@ fn connect_or_start(
                 &[("path", &socket.display()), ("error", &e)]
             )
         );
+        // What the server itself said on its way out is the reason; the handshake only knows the socket is not there.
+        let said = said_by_server(&companion_path(socket, "server-log"));
+        let error = match said {
+            Some(said) => UiTexts::new(crate::frontend::env_is_german()).say(
+                "problem-server-said",
+                &[("error", &e.to_string()), ("said", &said)],
+            ),
+            None => e.to_string(),
+        };
         Problem::Server {
             command,
             socket: socket.to_path_buf(),
-            error: e.to_string(),
+            error,
         }
     })
 }
@@ -131,7 +142,7 @@ fn starter(
     lease: &Path,
     own_socket: bool,
     facet: Option<&str>,
-) -> Result<(CommandStarter, String), String> {
+) -> Result<(LoggedStarter, String), String> {
     let me = std::env::current_exe().map_err(|e| e.to_string())?;
     let name = me.file_name().and_then(|n| n.to_str()).unwrap_or_default();
     // `serve` is not a word of the window-only program: its server is the binary next to it.
@@ -151,7 +162,8 @@ fn starter(
         .chain(words.iter().map(|w| w.to_string_lossy().into_owned()))
         .collect::<Vec<_>>()
         .join(" ");
-    Ok((CommandStarter::new(program, words), command))
+    let log = companion_path(socket, "server-log");
+    Ok((LoggedStarter::new(program, words, log), command))
 }
 
 /// Hold the shared lock on `path` until this process ends.

@@ -91,7 +91,7 @@ fn own_uid() -> Option<u32> {
 
 /// Path, owner, mode and whether a file can be made in it.
 fn folder(t: &UiTexts, dir: &Path) -> String {
-    let writable = if crate::start_access::writable(dir) {
+    let writable = if crate::start_access::writable_without_making(dir) {
         t.plain("diagnose-writable")
     } else {
         t.plain("diagnose-not-writable")

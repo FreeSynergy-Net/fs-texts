@@ -27,11 +27,33 @@ pub fn start_lock(args: &Args, data: &Path, german: bool) -> Option<String> {
     None
 }
 
-/// Whether a file can be made in `folder` (the folder is made when it is not there).
+/// Make `folder` (and what lacks above it) for its owner alone (0700): the server refuses a data folder that is not.
+fn make_private(folder: &Path) -> std::io::Result<()> {
+    let mut builder = std::fs::DirBuilder::new();
+    builder.recursive(true);
+    #[cfg(unix)]
+    std::os::unix::fs::DirBuilderExt::mode(&mut builder, 0o700);
+    builder.create(folder)
+}
+
+/// Whether a file can be made in `folder` (the folder is made when it is not there, for its owner alone: 0700).
 pub fn writable(folder: &Path) -> bool {
-    if std::fs::create_dir_all(folder).is_err() {
+    if make_private(folder).is_err() {
         return false;
     }
+    probe_in(folder)
+}
+
+/// Whether a file could be made in `folder` without making anything: a folder that is not there is judged by the nearest
+/// one above it that is (the look of the diagnosis, which only reads).
+pub fn writable_without_making(folder: &Path) -> bool {
+    folder
+        .ancestors()
+        .find(|d| d.is_dir())
+        .is_some_and(probe_in)
+}
+
+fn probe_in(folder: &Path) -> bool {
     // A fresh name each time (`create_new`): a leftover file of an earlier run can never stand for write access.
     for n in 0..16_u32 {
         let probe = folder.join(format!(".fs-texts-write-test-{}-{n}", std::process::id()));

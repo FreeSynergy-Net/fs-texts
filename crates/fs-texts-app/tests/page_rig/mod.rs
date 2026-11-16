@@ -76,16 +76,26 @@ pub fn rig_in(german: bool, frontend: Frontend) -> Rig {
 
 /// The same rig over a wiki that holds exactly `pages` (none = an empty wiki).
 pub fn rig_with(german: bool, frontend: Frontend, pages: &[(&str, &str)]) -> Rig {
+    rig_locked(german, frontend, pages, None)
+}
+
+/// The same rig, read only for the reason `lock` (as the start makes it when nothing can be written).
+pub fn rig_locked(
+    german: bool,
+    frontend: Frontend,
+    pages: &[(&str, &str)],
+    lock: Option<&str>,
+) -> Rig {
     let (rt, fixture) = common::wiki();
     let wiki = fixture.wiki().texts();
     for (path, text) in pages {
         rt.block_on(wiki.create(path, text)).unwrap();
     }
-    let source = Arc::new(WikiSource::new(
-        Arc::clone(&wiki),
-        rt.handle().clone(),
-        vec![],
-    ));
+    let mut source = WikiSource::new(Arc::clone(&wiki), rt.handle().clone(), vec![]);
+    if let Some(why) = lock {
+        source = source.read_only_because(why.to_owned());
+    }
+    let source = Arc::new(source);
     let maker: Arc<dyn PageMaker> = source.clone();
     let reader = ReaderWidget::new(
         source,

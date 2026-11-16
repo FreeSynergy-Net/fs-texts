@@ -238,6 +238,9 @@ fn records_key(sources: &[(String, PathBuf)]) -> PathBuf {
 /// folder, or when the store cannot be made, it is left as it is and the reason goes to stderr.
 fn with_drafts(reader: ReaderWidget, args: &Args) -> ReaderWidget {
     let Some(dir) = args.drafts.clone().or_else(crate::drafts::default_dir) else {
+        crate::mode_link::drafts_failed(
+            crate::ui_texts::UiTexts::new(crate::frontend::is_german(args)).plain("drafts-off"),
+        );
         return reader;
     };
     let wiki = args
@@ -248,6 +251,10 @@ fn with_drafts(reader: ReaderWidget, args: &Args) -> ReaderWidget {
         Ok(store) => reader.drafts(Arc::new(store) as Arc<dyn DraftStore>),
         Err(e) => {
             eprintln!("fs-texts: drafts are not backed up ({e})");
+            crate::mode_link::drafts_failed(
+                crate::ui_texts::UiTexts::new(crate::frontend::is_german(args))
+                    .say("drafts-failed", &[("error", &e.to_string())]),
+            );
             reader
         }
     }

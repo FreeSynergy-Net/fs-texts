@@ -6,6 +6,7 @@
 //! (rule: a missing data source or right is always reported, never silently greyed out).
 
 use std::path::PathBuf;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, PoisonError};
 use std::time::Duration;
 
@@ -105,14 +106,47 @@ impl Switcher {
         self.redraw();
     }
 
-    /// "Reconnect": the program starts again like at the start; this window ends when that worked.
+    /// "Reconnect": the draft in the editor is backed up first (and waited for); when it cannot be, the person is asked. Then
+    /// the program starts again like at the start; this window ends when that worked. A second click does nothing.
     fn reconnect(self: &Arc<Self>) {
+        let t = self.texts();
+        let unsafe_draft = self.surface.current().with_reader(|r| {
+            let editing = r.editing().is_some();
+            r.backup_now();
+            editing && (r.backup_problem().is_some() || crate::mode_link::drafts_off())
+        });
+        if !unsafe_draft {
+            return self.reopen();
+        }
+        let (yes, no) = (Arc::clone(self), Arc::clone(self));
+        self.surface.modal.set(crate::window_modal::question_view(
+            crate::window_modal::Question {
+                title: t.plain("link-draft-title"),
+                body: t.plain("link-draft-body"),
+                yes_word: t.plain("link-draft-yes"),
+                no_word: t.plain("link-draft-no"),
+                on_yes: Arc::new(move || yes.reopen()),
+                on_no: Arc::new(move || no.close_modal()),
+            },
+        ));
+        self.redraw();
+    }
+
+    fn reopen(self: &Arc<Self>) {
         let Some(link) = &self.link else { return };
+        if self.reconnecting.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        self.app
+            .set_status(Some(Status::Info(self.texts().plain("link-reopening"))));
         match (link.reconnect)() {
             Ok(()) => {
                 self.app.quit();
             }
-            Err(e) => self.problem(e),
+            Err(e) => {
+                self.reconnecting.store(false, Ordering::SeqCst);
+                self.problem(e);
+            }
         }
     }
 

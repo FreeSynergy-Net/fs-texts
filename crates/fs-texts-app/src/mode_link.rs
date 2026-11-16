@@ -18,6 +18,20 @@ pub const EVERY: Duration = Duration::from_secs(3);
 /// What the start found that the person is told in the window (a lease that could not be held).
 static NOTES: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
+/// Set when the drafts are not backed up (no store could be made): then an edit in progress is lost with the window.
+static DRAFTS_OFF: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The drafts cannot be backed up: remember it, and the sentence for the window.
+pub fn drafts_failed(said: String) {
+    DRAFTS_OFF.store(true, std::sync::atomic::Ordering::SeqCst);
+    note(said);
+}
+
+/// Whether the drafts are not backed up.
+pub fn drafts_off() -> bool {
+    DRAFTS_OFF.load(std::sync::atomic::Ordering::SeqCst)
+}
+
 /// Remember `note` for the window to say.
 pub fn note(note: String) {
     NOTES
