@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=FreeSynergy.Texts
+Comment=Write and organise texts and wikis
+Exec=fs-texts
+Icon=net.freesynergy.Texts
+Terminal=false
+Categories=Office;TextEditor;
