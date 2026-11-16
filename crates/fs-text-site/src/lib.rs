@@ -32,6 +32,7 @@ mod walk;
 pub mod words;
 mod write;
 mod write_parts;
+mod write_site;
 
 pub use build::{build, build_all, BuildOptions};
 pub use config::{CspMode, DnsRecord, Lang, SiteConfig};

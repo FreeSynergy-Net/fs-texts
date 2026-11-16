@@ -28,7 +28,8 @@ pub fn sitemap(cfg: &SiteConfig, pages: &BTreeMap<Vec<String>, Vec<Lang>>) -> St
                 "<url>\n<loc>{}</loc>\n",
                 text_string(&abs(l, path))
             ));
-            if langs.len() > 1 {
+            {
+                // Same set as the HTML pages: all variants (also one) and x-default.
                 for a in langs {
                     o.push_str(&format!(
                         "<xhtml:link rel=\"alternate\" hreflang=\"{}\" href=\"{}\"/>\n",

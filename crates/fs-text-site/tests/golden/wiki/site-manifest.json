@@ -22,67 +22,67 @@
       "sha256": "7b54fa796359235956a7d60adb2d7e77ad836b62f111aa695c062111e3aacc0a"
     },
     {
-      "bytes": 1422,
+      "bytes": 1496,
       "kind": "page",
       "media": "text/html",
       "path": "de/guide/10-last/index.html",
-      "sha256": "a92c04c818447951223c87406e472ff7d8dca5acf299076b4127f18809b895b2"
+      "sha256": "6f2243f0aa31bd426f57c145b7068891fc4f659f25fbb29a1efd08720996355e"
     },
     {
-      "bytes": 1424,
+      "bytes": 1498,
       "kind": "page",
       "media": "text/html",
       "path": "de/guide/2-second/index.html",
-      "sha256": "228eb8947c5c4fc7b2ed6d9721ebd4377f7ca1147a1aae2b2a58a8dc8a716d2a"
+      "sha256": "e808aa36341838ed348553e74c13b79a17f605ad21b015a5d1809131327390e0"
     },
     {
-      "bytes": 1419,
+      "bytes": 1493,
       "kind": "page",
       "media": "text/html",
       "path": "de/guide/index.html",
-      "sha256": "93e188929579a090322d920cd5415c67958bfcd41c6d714f576836a6571bb7a6"
+      "sha256": "1a439f47b6a16500e2babc2e4583a2b1f2a6d6b8f710297da0b090cb52773504"
     },
     {
-      "bytes": 1600,
+      "bytes": 1674,
       "kind": "page",
       "media": "text/html",
       "path": "de/guide/install/index.html",
-      "sha256": "a40cf3b3ae4df1d5c6f6c99d31067a6c811cdcb3865e36571bbaeb122fe1681b"
+      "sha256": "a8d07eebcb368011271a1bc06e1d9a1a40911b669262991bedb03f1a3544b29b"
     },
     {
-      "bytes": 1591,
+      "bytes": 1665,
       "kind": "page",
       "media": "text/html",
       "path": "de/index.html",
-      "sha256": "211804faef4b58d62aab479e6b2aadb4a36432d712357e7fced60fa7b9bd92d3"
+      "sha256": "ba562e1318f4402cc0a1a2272f0b09991bb9fc75dc0833ae490748f7ca9e8218"
     },
     {
-      "bytes": 1699,
+      "bytes": 1772,
       "kind": "page",
       "media": "text/html",
       "path": "de/inhalt/index.html",
-      "sha256": "5392a84631ed66a00a98620698888c08cc857a0cb9e47c6adc63ec8ee1692372"
+      "sha256": "37eb1bcb6e676783bbec8beee8f34cd9d6424c7ebd51c6b1563c491e56a60792"
     },
     {
-      "bytes": 1554,
+      "bytes": 1627,
       "kind": "page",
       "media": "text/html",
       "path": "en/contents/index.html",
-      "sha256": "4764e7a0994d6a8bab18eb04a881b7808d4782120e33279a07570fd7dfb9f7c8"
+      "sha256": "2152ed99ca8b456686af2479ac8bc39e015948d5bbb2953ab4df9526b6cafa6e"
     },
     {
-      "bytes": 1151,
+      "bytes": 1225,
       "kind": "page",
       "media": "text/html",
       "path": "en/guide/only-en/index.html",
-      "sha256": "ba2a2490baf95647c359069e8b7011c6b8cc790bb46577e5d1c2f8a745f3f830"
+      "sha256": "0025370b2dcf15b5ea7f701dfb00ee51474d3c1da18342e429b0b88f155d6af6"
     },
     {
-      "bytes": 1420,
+      "bytes": 1494,
       "kind": "page",
       "media": "text/html",
       "path": "en/index.html",
-      "sha256": "e07ca591f6d165f3812690642f36a9f945a51eda34439ad2c35a2a6033ef65e5"
+      "sha256": "05316f5887479152ac3b28cdcbc88b3960743f63dfc5babafdb2eef6f8562475"
     },
     {
       "bytes": 983,
@@ -99,11 +99,11 @@
       "sha256": "8178ba90e45c0a4f1fd702d4ec4df20c38241d1fc90188f9166301ad5d0ec1b0"
     },
     {
-      "bytes": 1088,
+      "bytes": 1981,
       "kind": "generated",
       "media": "text/xml",
       "path": "sitemap.xml",
-      "sha256": "e7fdb13639540b977416ab20cca3c9b4f669ce615bdd870b9d4fda5ecae40567"
+      "sha256": "5d678bda4c023980c4f7a48ecbbe0c8c822b5daa30307f6af96099d4273818b0"
     }
   ],
   "host": "example.test",

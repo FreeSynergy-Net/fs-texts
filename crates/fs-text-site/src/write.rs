@@ -15,7 +15,8 @@ use crate::report::BuildReport;
 use crate::source::{FileEntry, SiteSource};
 use crate::tree::{build as build_tree, render_full, TreePage};
 use crate::words::SiteWords;
-use fs_text_html::pass::{Limits, MediaType};
+use crate::write_site::put_page;
+use fs_text_html::pass::Limits;
 use fs_text_html::{render_page, Alternate, Csp, Frame, HtmlPage, NavNode, Navigation};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
@@ -113,7 +114,7 @@ impl<'a> Writer<'a> {
         )
     }
 
-    fn frame(&self, lang: &Lang, nav: Navigation) -> Frame {
+    pub(crate) fn frame(&self, lang: &Lang, nav: Navigation) -> Frame {
         Frame {
             lang: lang.as_str().to_string(),
             site_name: self.cfg.name.clone(),
@@ -169,15 +170,23 @@ impl<'a> Writer<'a> {
             .collect();
         let contents_path = vec![w.contents_slug.to_string()];
         let contents_url = page_url(&self.prefix, lang, &contents_path);
-        let node = NavNode {
-            title: w.contents.to_string(),
-            href: contents_url.clone(),
-            children: Vec::new(),
-        };
-        let core = build_tree(&self.prefix, lang, &tree_pages, Vec::new());
+        // Contents page and sitemap are on every page, outside the navigation budget.
+        let extra = vec![
+            NavNode {
+                title: w.contents.to_string(),
+                href: contents_url.clone(),
+                children: Vec::new(),
+            },
+            NavNode {
+                title: w.sitemap.to_string(),
+                href: format!("{}/sitemap.xml", self.prefix),
+                children: Vec::new(),
+            },
+        ];
+        let core = build_tree(&self.prefix, lang, &tree_pages, Vec::new(), "");
         let mut frame = self.frame(
             lang,
-            build_tree(&self.prefix, lang, &tree_pages, vec![node]),
+            build_tree(&self.prefix, lang, &tree_pages, extra, w.more),
         );
         for r in &mine {
             let mut page = r.html.clone();
@@ -229,68 +238,4 @@ impl<'a> Writer<'a> {
             Ok(Some(contents_url))
         }
     }
-
-    /// Language choice, 404, sitemap, robots, `site.toml`: what the user did not bring.
-    fn site_files(&mut self, starts: &[(Lang, String)]) -> Result<(), SiteError> {
-        let cfg = self.cfg;
-        let dl = &cfg.default_language;
-        let mut plain = self.frame(dl, Navigation::default());
-        plain.canonical = Some(format!("{}/", self.origin));
-        if !self.supplied.contains("index.html") {
-            let page = HtmlPage {
-                body: gen::choose_body(cfg, starts),
-                title: Some(cfg.name.clone()),
-                ..HtmlPage::default()
-            };
-            self.out.put(
-                "index.html",
-                render_page(&plain, &page).as_bytes(),
-                "text/html",
-                Kind::Generated,
-            )?;
-        }
-        if !self.supplied.contains("404.html") {
-            let page = HtmlPage {
-                body: gen::not_found_body(cfg),
-                title: Some(SiteWords::for_lang(dl.as_str()).not_found.to_string()),
-                ..HtmlPage::default()
-            };
-            self.out.put(
-                "404.html",
-                render_page(&plain, &page).as_bytes(),
-                "text/html",
-                Kind::Generated,
-            )?;
-        }
-        self.out.put(
-            "sitemap.xml",
-            gen::sitemap(cfg, &self.by_path).as_bytes(),
-            MediaType::Xml.mime(),
-            Kind::Generated,
-        )?;
-        if cfg.path_prefix.is_root() && !self.supplied.contains("robots.txt") {
-            self.out.put(
-                "robots.txt",
-                gen::robots(cfg).as_bytes(),
-                "text/plain",
-                Kind::Generated,
-            )?;
-        }
-        self.out.put(
-            "site.toml",
-            cfg.to_schema1().as_bytes(),
-            "text/x-toml",
-            Kind::Generated,
-        )
-    }
-}
-
-fn put_page(out: &mut Out, lang: &Lang, path: &[String], html: &str) -> Result<(), SiteError> {
-    let mut p = format!("{}/", lang.as_str());
-    for s in path {
-        p.push_str(s);
-        p.push('/');
-    }
-    p.push_str("index.html");
-    out.put(&p, html.as_bytes(), "text/html", Kind::Page)
 }

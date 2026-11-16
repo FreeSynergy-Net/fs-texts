@@ -62,9 +62,16 @@ fn trim_zeros(d: &[u8]) -> &[u8] {
     &d[z..]
 }
 
-/// The navigation of one language. The `extra` roots (the contents page) come last.
+/// The navigation of one language. The `extra` links (contents page, sitemap) are kept apart: the
+/// navigation shows them on every page, outside its budget; `more` is the label of the hint.
 #[must_use]
-pub fn build(prefix: &str, lang: &Lang, pages: &[TreePage], extra: Vec<NavNode>) -> Navigation {
+pub fn build(
+    prefix: &str,
+    lang: &Lang,
+    pages: &[TreePage],
+    extra: Vec<NavNode>,
+    more: &str,
+) -> Navigation {
     let by_path: HashMap<&[String], usize> = pages
         .iter()
         .enumerate()
@@ -111,12 +118,15 @@ pub fn build(prefix: &str, lang: &Lang, pages: &[TreePage], extra: Vec<NavNode>)
                 .collect(),
         }
     }
-    let mut roots: Vec<NavNode> = top
+    let roots: Vec<NavNode> = top
         .iter()
         .map(|&i| node(i, pages, &kids, prefix, lang))
         .collect();
-    roots.extend(extra);
-    Navigation { roots }
+    Navigation {
+        roots,
+        extra,
+        more: more.to_string(),
+    }
 }
 
 /// The full tree as nested lists, for the contents page.

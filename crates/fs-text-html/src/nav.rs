@@ -26,6 +26,11 @@ pub struct NavNode {
 pub struct Navigation {
     /// Top level.
     pub roots: Vec<NavNode>,
+    /// Links shown on every page after the tree, outside the budget (contents page, sitemap).
+    /// The first one is where the "more" hint leads.
+    pub extra: Vec<NavNode>,
+    /// Label of the hint shown where the budget cut entries (empty: `…`).
+    pub more: String,
 }
 
 impl Navigation {
@@ -67,12 +72,53 @@ impl Navigation {
     pub fn render(&self, href: &str) -> String {
         let path = self.path_to(href);
         let mut out = String::new();
-        level(&self.roots, &path, 0, href, &mut out);
+        let more = More {
+            label: if self.more.is_empty() {
+                "…"
+            } else {
+                &self.more
+            },
+            href: self.extra.first().map(|n| n.href.as_str()),
+        };
+        level(&self.roots, &path, 0, (href, &more), &mut out);
+        if !self.extra.is_empty() {
+            out.push_str("<ul class=\"extra\">\n");
+            for n in &self.extra {
+                item(n, href, &mut out);
+                out.push_str("</li>\n");
+            }
+            out.push_str("</ul>\n");
+        }
         out
     }
 }
 
-fn level(list: &[NavNode], path: &[usize], depth: usize, current: &str, out: &mut String) {
+/// The hint at the end of a list the budget cut.
+struct More<'a> {
+    label: &'a str,
+    href: Option<&'a str>,
+}
+
+/// `<li><a>` of one entry, not yet closed.
+fn item(n: &NavNode, current: &str, out: &mut String) {
+    out.push_str("<li><a href=\"");
+    escape::attr(&n.href, out);
+    out.push('"');
+    if n.href == current {
+        out.push_str(" aria-current=\"page\"");
+    }
+    out.push('>');
+    escape::text(&n.title, out);
+    out.push_str("</a>");
+}
+
+fn level(
+    list: &[NavNode],
+    path: &[usize],
+    depth: usize,
+    (current, more): (&str, &More<'_>),
+    out: &mut String,
+) {
     if list.is_empty() {
         return;
     }
@@ -80,29 +126,38 @@ fn level(list: &[NavNode], path: &[usize], depth: usize, current: &str, out: &mu
     let all = depth == 0 || !on_path || depth + 1 == path.len();
     out.push_str("<ul>\n");
     let mut shown = 0;
+    let mut cut = false;
     for (i, n) in list.iter().enumerate() {
         let mine = on_path && path[depth] == i;
         if !all && !mine {
             continue;
         }
         // The budget is kept in code, not only in a test: a flat folder of thousands of pages
-        // shows its first entries and the page itself; the contents page lists the rest.
+        // shows its first entries and the page itself; the contents page lists the rest, and
+        // a hint says so.
         if !mine && shown >= MAX_SHOWN {
+            cut = true;
             continue;
         }
         shown += 1;
-        out.push_str("<li><a href=\"");
-        escape::attr(&n.href, out);
-        out.push('"');
-        if n.href == current {
-            out.push_str(" aria-current=\"page\"");
-        }
-        out.push('>');
-        escape::text(&n.title, out);
-        out.push_str("</a>");
+        item(n, current, out);
         if mine {
             out.push('\n');
-            level(&n.children, path, depth + 1, current, out);
+            level(&n.children, path, depth + 1, (current, more), out);
+        }
+        out.push_str("</li>\n");
+    }
+    if cut {
+        out.push_str("<li class=\"more\">");
+        match more.href {
+            Some(h) => {
+                out.push_str("<a href=\"");
+                escape::attr(h, out);
+                out.push_str("\">");
+                escape::text(more.label, out);
+                out.push_str("</a>");
+            }
+            None => escape::text(more.label, out),
         }
         out.push_str("</li>\n");
     }

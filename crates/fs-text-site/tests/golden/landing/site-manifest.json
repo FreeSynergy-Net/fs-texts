@@ -39,39 +39,39 @@
       "sha256": "7091ab4775b4fa8b1b81b322dc3b0f86a1736e13cdeee8a3fad54ca43dce8025"
     },
     {
-      "bytes": 1194,
+      "bytes": 1263,
       "kind": "page",
       "media": "text/html",
       "path": "de/about/index.html",
-      "sha256": "8295503fadab794afc3ca35c5761598f6884949d18cba462a087c513df543d73"
+      "sha256": "e41e1b52a82694724e37695da9226eda06a980194d0823838b4111375cd58bcd"
     },
     {
-      "bytes": 1488,
+      "bytes": 1557,
       "kind": "page",
       "media": "text/html",
       "path": "de/index.html",
-      "sha256": "4d88547ce418ba96a77958615e0d346ee5712fb26740d55eb91ddca9a9515cb0"
+      "sha256": "6e4f39578a8602b140d2c081c22b8bf8d0a3a3df03b9e6811f31da02b91d57ef"
     },
     {
-      "bytes": 1480,
+      "bytes": 1548,
       "kind": "page",
       "media": "text/html",
       "path": "de/inhalt/index.html",
-      "sha256": "3dcf5e11ebed2f4f49a89440135b7c805edbfee61f27e22887d5eb00ecc2c291"
+      "sha256": "cd7af653a5d4edc0a5451f444f23e215f80559c1009d48f58d424339761c275f"
     },
     {
-      "bytes": 1396,
+      "bytes": 1464,
       "kind": "page",
       "media": "text/html",
       "path": "en/contents/index.html",
-      "sha256": "0b9ec8fc6a0de2a39604073f88a73d72b1e3605b0057fc7286b23566e136163e"
+      "sha256": "3492473dfa80cf35a83a5b6bf230ef8d0f8faa877a1492a49f9d5df0b8877988"
     },
     {
-      "bytes": 1393,
+      "bytes": 1462,
       "kind": "page",
       "media": "text/html",
       "path": "en/index.html",
-      "sha256": "00d9e0cb6c9865991de244927313fa0088a5398f7f3c3f8ebede70499a181afc"
+      "sha256": "1174141daa8b094480d1be8605742c018c3af07c054af0f9b536b20c05ec6922"
     },
     {
       "active": false,
@@ -104,11 +104,11 @@
       "sha256": "1bdf60738752f5f5a05cae52eafb11caef4158af34fca89851ac8b4927d1d0c4"
     },
     {
-      "bytes": 770,
+      "bytes": 932,
       "kind": "generated",
       "media": "text/xml",
       "path": "sitemap.xml",
-      "sha256": "bda2e022d3153cba4ca0a8ff76fc3e4ca5f57d11ce2566b6d93d529610c1b9fa"
+      "sha256": "317a148f8191c4ea9455c7e82d25eff0c420647b3db557688cebfd70a28db7b9"
     }
   ],
   "host": "example.test",

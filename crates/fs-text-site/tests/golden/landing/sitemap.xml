@@ -14,5 +14,7 @@
 </url>
 <url>
 <loc>https://example.test/de/about/</loc>
+<xhtml:link rel="alternate" hreflang="de" href="https://example.test/de/about/"/>
+<xhtml:link rel="alternate" hreflang="x-default" href="https://example.test/"/>
 </url>
 </urlset>

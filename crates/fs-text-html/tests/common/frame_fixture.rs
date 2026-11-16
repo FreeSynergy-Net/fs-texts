@@ -19,6 +19,7 @@ pub fn frame() -> Frame {
                 n("Guide", "/de/guide/", vec![n("Install", "/de/guide/install/", vec![]), n("Use", "/de/guide/use/", vec![])]),
                 n("About", "/de/about/", vec![n("Team", "/de/about/team/", vec![])]),
             ],
+            ..Navigation::default()
         },
         current: "/de/guide/".into(),
         footer: Some("Example footer".into()),

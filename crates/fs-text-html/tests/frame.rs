@@ -91,6 +91,7 @@ fn big() -> Navigation {
                 children: (0..20).map(|b| mid(a, b)).collect(),
             })
             .collect(),
+        ..Navigation::default()
     }
 }
 
@@ -182,6 +183,7 @@ fn the_navigation_budget_is_kept_by_the_code_also_for_a_flat_folder() {
             href: "/en/a/".into(),
             children: kids,
         }],
+        ..Navigation::default()
     };
     for cur in ["/en/a/", "/en/a/p0/", "/en/a/p4999/"] {
         let h = nav.render(cur);
