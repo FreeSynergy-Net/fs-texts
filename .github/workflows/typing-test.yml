@@ -37,12 +37,12 @@ jobs:
         with:
           cache-key: typing-test
       - name: Build the window (debug, with the read-only text access of the test; the feature is refused in a release build)
-        run: cargo build --locked -p fs-wiki --features test-access
+        run: cargo build --locked -p fs-texts-bin --features test-access
       - uses: FreeSynergy/fs-release/actions/typing-test@main
         with:
-          app-binary: target/debug/fs-wiki
+          app-binary: target/debug/fs-texts
           app-args: "--admin --size 1000x640"
           scenario: .github/typing-test/focus.sh
-          name: fs-wiki
+          name: fs-texts
           layout: ${{ inputs.layout || 'de' }}
           runs: ${{ inputs.runs || '3' }}

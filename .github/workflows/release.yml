@@ -10,12 +10,12 @@ jobs:
   release:
     uses: FreeSynergy/fs-release/.github/workflows/release.yml@main
     with:
-      binaries: fs-wiki
-      cargo-package: fs-wiki
-      ignore-binaries: fs-wiki-app,fs-wiki-server   # the window and the server alone; `fs-wiki` holds both
-      name: fs-wiki
+      binaries: fs-texts
+      cargo-package: fs-texts-bin
+      ignore-binaries: fs-texts-app,fs-texts-server   # the window and the server alone; `fs-texts` holds both
+      name: fs-texts
       kind: app
-      app-id: net.freesynergy.Wiki
+      app-id: net.freesynergy.Texts
       macos: false
       windows-targets: ""   # Unix sockets and Unix paths for now
     secrets:

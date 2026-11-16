@@ -28,22 +28,22 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic
       # One step per crate with a time limit, so a test that waits for ever on Windows shows which crate it is in.
-      - run: cargo test -p fs-text --all-features --no-fail-fast
+      - run: cargo test -p fs-texts --all-features --no-fail-fast
         timeout-minutes: 10
         if: ${{ !cancelled() }}
-      - run: cargo test -p fs-wiki-core --all-features --no-fail-fast
+      - run: cargo test -p fs-texts-core --all-features --no-fail-fast
         timeout-minutes: 20
         if: ${{ !cancelled() }}
-      - run: cargo test -p fs-wiki-client --all-features --no-fail-fast
+      - run: cargo test -p fs-texts-client --all-features --no-fail-fast
         timeout-minutes: 15
         if: ${{ !cancelled() }}
-      - run: cargo test -p fs-wiki-server --all-features --no-fail-fast
+      - run: cargo test -p fs-texts-server --all-features --no-fail-fast
         timeout-minutes: 20
         if: ${{ !cancelled() }}
-      - run: cargo test -p fs-wiki-app --all-features --no-fail-fast
+      - run: cargo test -p fs-texts-app --all-features --no-fail-fast
         timeout-minutes: 20
         if: ${{ !cancelled() }}
-      - run: cargo test -p fs-wiki --all-features --no-fail-fast
+      - run: cargo test -p fs-texts-bin --all-features --no-fail-fast
         timeout-minutes: 15
         if: ${{ !cancelled() }}
       - uses: FreeSynergy/fs-release/actions/rust-rules@main
