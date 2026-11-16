@@ -78,3 +78,10 @@ The later `DnsProvider` of fs-server (ADR 0088) reads only `names` and `dns.reco
 
 Core 1 (this crate) is built and green: exporter, frame, short navigation, theme, pass-through; tests `blocks`, `golden`, `cmark`, `security` (proptest), `frame`, `pass`, `pass_fs`.
 Not done: everything of `fs-text-site`.
+
+## After the review of core 1 (2026-11-16)
+* B1 fixed: the raw HTML scanner cut by bytes and panicked on non-ASCII behind a tag, comment or entity (`<div>ä</div>`); now by characters. Tests `tests/unicode.rs` (umlauts, ß, emoji, CJK; proptest with Unicode and hostile pieces; the real corpus including raw HTML must not panic); the mutation (old code) is red.
+* Opening a file for pass-through: `O_NOFOLLOW|O_NONBLOCK`, checks (`is_file`, `nlink`) on the open descriptor, canonical path compared afterwards; a pipe is refused at once (the test no longer hangs when the check is missing, it goes red).
+* `pass::ALWAYS_RESERVED` and multi-segment reserved paths; the short navigation shows at most 40 entries per level (code); media types are those Zentinel sends (`.mjs`, `.xml`).
+* Honest limit: `frame-ancestors`, `X-Content-Type-Options` and `Referrer-Policy` must come as headers from the server; Zentinel 26.11_2 does not send them on static routes (measured), and `frame-ancestors` is ignored in a `<meta>` CSP. If the allow-list ever gets a URL attribute (`href`, `src`), entities must be decoded before `safe_link` or `ammonia` must be used.
+* `site.toml` schema 2 is written in `/srv/FreeSynergy/.scratch/site-toml-schema-v2.md` and implemented in `fs-text-site`.
