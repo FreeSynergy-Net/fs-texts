@@ -32,8 +32,21 @@ pub fn writable(folder: &Path) -> bool {
     if std::fs::create_dir_all(folder).is_err() {
         return false;
     }
-    let probe = folder.join(format!(".fs-wiki-write-test-{}", std::process::id()));
-    let made = std::fs::write(&probe, b"").is_ok();
-    let _ = std::fs::remove_file(&probe);
-    made
+    // A fresh name each time (`create_new`): a leftover file of an earlier run can never stand for write access.
+    for n in 0..16_u32 {
+        let probe = folder.join(format!(".fs-wiki-write-test-{}-{n}", std::process::id()));
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&probe)
+        {
+            Ok(_) => {
+                let _ = std::fs::remove_file(&probe);
+                return true;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(_) => return false,
+        }
+    }
+    false
 }

@@ -127,3 +127,16 @@ fn a_start_that_asks_for_reading_only_is_locked_with_the_way_out_and_edit_unlock
             .contains("nur lesen")
     );
 }
+
+#[test]
+fn a_start_with_the_facet_link_or_as_the_store_starts_it_can_make_pages() {
+    // The store starts a program with no argument; the facet link `fs-wiki` adds `--facet wiki`: both are normal starts.
+    let data = tempfile::tempdir().unwrap();
+    for words in [vec![], vec!["--facet", "wiki"]] {
+        let args = parse(&words.iter().map(|w| (*w).to_owned()).collect::<Vec<_>>()).unwrap();
+        assert_eq!(start_lock(&args, data.path(), false), None, "{words:?}");
+        let menu = page_menu(&window_of(&words, data.path()));
+        let new = menu.iter().find(|(id, ..)| id == PAGE_NEW).unwrap();
+        assert!(!new.2, "New page is active for {words:?}: {new:?}");
+    }
+}
