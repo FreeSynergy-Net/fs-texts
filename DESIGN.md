@@ -112,7 +112,7 @@ verified: typing in the real window against a server, the start check on a large
 
 ## State
 
-Version 0.0.7 (workspace; the tag is set by the owner; the first release after 0.0.6 is the Q0 migration, the reading wiki and the lift together). Built on `fs-objects` v0.0.1, `fs-interfaces` / `fs-types` v0.0.19 and `fs-components` v0.0.11 (git tags; Blinc `fs-blinc-3.1`; Blinc `fs-blinc-3` comes only through `fs-components`, see "Q0 migration"; `fs-hub-client` v0.0.1 still brings a second `fs-interfaces` source, see there). New in 0.3.0: pages cut in the store at a place, no quadratic import, `LinkRow.title` / `internal`, store identity in the report, typed problem extensions, `TextFeed::subscribe` may say `Unsupported`.
+Version 0.0.13 (workspace; pre-release, the tag is set by the owner). Built on `fs-objects` v0.0.1, `fs-interfaces` / `fs-types` v0.0.19 and `fs-components` v0.0.20 (git tags; Blinc `fs-blinc-3.1`; Blinc `fs-blinc-3` comes only through `fs-components`, see "Q0 migration"; `fs-hub-client` v0.0.1 still brings a second `fs-interfaces` source, see there). The page tree of the window is a copy of the list of the reader: the window remembers the list the tree was made from (`listed`) and a small thread compares it with the reader's list every 200 ms and makes the tree again when it changed (`frontend_window.rs`, `watch_state` / `remake_tree`), so a page made, renamed or saved from outside the tree is in it and marked; the hook `on_saved` makes the tree at once after a save. New in 0.3.0: pages cut in the store at a place, no quadratic import, `LinkRow.title` / `internal`, store identity in the report, typed problem extensions, `TextFeed::subscribe` may say `Unsupported`.
 
 | Area | State |
 |---|---|
