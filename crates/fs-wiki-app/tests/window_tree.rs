@@ -37,11 +37,23 @@ fn a_page_made_in_the_window_is_in_the_tree_and_marked() {
         assert!(r.modal.field_text().is_none(), "the dialog closed");
         assert!(r.tree_gets("aufgaben.md"), "{frontend:?}: in the tree");
         let tree = r.window_layout(1000.0, 700.0);
-        assert_ne!(
-            fill_of(&tree, "aufgaben.md"),
-            fill_of(&tree, "notes.md"),
-            "{frontend:?}: the open page is marked, the others are not"
-        );
+        // The mark is a fill: the new page has one, the others have none or another one (not only "they differ").
+        let mark = fill_of(&tree, "aufgaben.md");
+        assert!(mark.is_some(), "{frontend:?}: the open page has the mark");
+        for other in ["notes.md", "handbook.md"] {
+            assert_ne!(
+                mark,
+                fill_of(&tree, other),
+                "{frontend:?}: {other} is not marked"
+            );
+        }
+        if frontend == Frontend::Notion {
+            // The picture of the window after the dialog: the new page stands in the tree and is marked.
+            let dir = std::env::var_os("FS_WIKI_SHOTS").map_or_else(std::env::temp_dir, Into::into);
+            std::fs::create_dir_all(&dir).unwrap();
+            r.window_picture(1000, 700, &dir.join("seite-ueber-dialog-im-baum.png"))
+                .unwrap();
+        }
     }
 }
 
