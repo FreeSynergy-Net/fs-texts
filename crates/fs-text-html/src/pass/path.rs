@@ -73,12 +73,17 @@ impl PassPath {
         (!stem.is_empty()).then(|| ext.to_ascii_lowercase())
     }
 
-    /// Does the path lie under `prefix` (a folder name like `de` or `_fs`, or a file name)?
-    /// Compared by whole segments and without regard to letter case.
+    /// Does the path lie under `prefix` (a folder name like `de` or `_fs`, a file name, or
+    /// several segments like `.well-known/acme-challenge`)? Compared by whole segments and
+    /// without regard to letter case; the path itself counts as under its own name.
     #[must_use]
     pub fn is_under(&self, prefix: &str) -> bool {
-        self.segments()
-            .next()
-            .is_some_and(|first| first.eq_ignore_ascii_case(prefix.trim_matches('/')))
+        let want: Vec<&str> = prefix.trim_matches('/').split('/').collect();
+        let mine: Vec<&str> = self.segments().collect();
+        mine.len() >= want.len()
+            && want
+                .iter()
+                .zip(&mine)
+                .all(|(w, m)| w.eq_ignore_ascii_case(m))
     }
 }

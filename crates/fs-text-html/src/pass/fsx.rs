@@ -128,17 +128,33 @@ pub fn open_plain(root: &Path, rel: &PassPath) -> Result<File, PassError> {
             return Err(PassError::NotRegular("a part of the path is not a folder"));
         }
     }
-    let before = fs::symlink_metadata(&p)?;
-    if !before.is_file() {
+    // Open first, and look at the open descriptor (not at the path again): `O_NOFOLLOW` refuses
+    // a link as the last part, `O_NONBLOCK` makes opening a pipe return at once (it is then
+    // refused below, it never hangs).
+    use std::os::unix::fs::OpenOptionsExt;
+    let f = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+        .open(&p)
+        .map_err(|e| {
+            if e.raw_os_error() == Some(libc::ELOOP) {
+                PassError::NotRegular("symbolic link")
+            } else {
+                PassError::Io(e)
+            }
+        })?;
+    let m = f.metadata()?;
+    if !m.is_file() {
         return Err(PassError::NotRegular("not a regular file"));
     }
-    if before.nlink() > 1 {
+    if m.nlink() > 1 {
         return Err(PassError::NotRegular("more than one name (hard link)"));
     }
-    let f = File::open(&p)?;
-    let after = f.metadata()?;
-    if !after.is_file() || after.ino() != before.ino() || after.dev() != before.dev() {
-        return Err(PassError::NotRegular("file changed while opening"));
+    // A folder on the way swapped for a link after the walk above: the file we hold must still
+    // be the one at `root/rel` with all links resolved.
+    let want = fs::canonicalize(root)?.join(rel.as_str());
+    if fs::canonicalize(&p)? != want {
+        return Err(PassError::NotRegular("a folder on the way changed while opening"));
     }
     Ok(f)
 }

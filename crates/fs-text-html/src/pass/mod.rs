@@ -12,7 +12,7 @@ mod fsx;
 mod media;
 mod path;
 
-pub use collect::PassSet;
+pub use collect::{PassSet, ALWAYS_RESERVED};
 pub use error::PassError;
 pub use fsx::{copy_file, copy_from, measure, open_plain, Copied, Limits};
 pub use media::{MediaType, Prober};

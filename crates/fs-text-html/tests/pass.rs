@@ -164,3 +164,24 @@ fn content_must_fit_the_extension() {
     );
     assert!(probe("xml", b"<a/>").is_ok() && probe("xml", b"plain").is_err());
 }
+
+#[test]
+fn reserved_paths_are_built_in_and_may_have_several_segments() {
+    use fs_text_html::pass::{PassPath, PassSet};
+    let mut set = PassSet::new(&["apps/private"]);
+    for p in [
+        "site.toml",
+        "SITE.TOML",
+        "site-manifest.json",
+        "_fs/media/x.png",
+        "sitemap.xml",
+        ".well-known/acme-challenge/token.txt",
+        "apps/private/x.css",
+        "apps/private",
+    ] {
+        assert!(set.add(&PassPath::parse(p).unwrap()).is_err(), "{p}");
+    }
+    for p in [".well-known/security.txt", "apps/public/x.css", "apps/privatex.css", "site.toml.txt"] {
+        assert!(set.add(&PassPath::parse(p).unwrap()).is_ok(), "{p}");
+    }
+}

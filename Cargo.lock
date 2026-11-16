@@ -1756,6 +1756,7 @@ name = "fs-text-html"
 version = "0.0.12"
 dependencies = [
  "fs-text",
+ "libc",
  "proptest",
  "pulldown-cmark 0.13.6",
  "sha2 0.10.9",

@@ -9,6 +9,9 @@ version.workspace = true
 fs-text = { path = "../fs-text" }
 sha2 = "0.10"
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [dev-dependencies]
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 proptest = "1"

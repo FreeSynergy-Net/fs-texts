@@ -7,6 +7,9 @@
 
 use crate::escape;
 
+/// Most entries of one list in the short navigation (the page on the path is always shown).
+pub const MAX_SHOWN: usize = 40;
+
 /// One entry of the navigation tree; the caller orders the children.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NavNode {
@@ -76,11 +79,18 @@ fn level(list: &[NavNode], path: &[usize], depth: usize, current: &str, out: &mu
     let on_path = depth < path.len();
     let all = depth == 0 || !on_path || depth + 1 == path.len();
     out.push_str("<ul>\n");
+    let mut shown = 0;
     for (i, n) in list.iter().enumerate() {
         let mine = on_path && path[depth] == i;
         if !all && !mine {
             continue;
         }
+        // The budget is kept in code, not only in a test: a flat folder of thousands of pages
+        // shows its first entries and the page itself; the contents page lists the rest.
+        if !mine && shown >= MAX_SHOWN {
+            continue;
+        }
+        shown += 1;
         out.push_str("<li><a href=\"");
         escape::attr(&n.href, out);
         out.push('"');

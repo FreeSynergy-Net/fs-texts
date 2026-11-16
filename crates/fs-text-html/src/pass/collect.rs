@@ -8,6 +8,17 @@ use super::error::PassError;
 use super::path::PassPath;
 use std::collections::BTreeMap;
 
+/// Paths no pass-through may ever use, whatever the site: the generated style sheet and media
+/// folder, the files every site gets, and the ACME challenge folder (the web server owns it).
+/// More than one segment is allowed.
+pub const ALWAYS_RESERVED: [&str; 5] = [
+    "_fs",
+    "site.toml",
+    "site-manifest.json",
+    "sitemap.xml",
+    ".well-known/acme-challenge",
+];
+
 /// The paths accepted so far.
 #[derive(Debug, Default)]
 pub struct PassSet {
@@ -17,12 +28,16 @@ pub struct PassSet {
 }
 
 impl PassSet {
-    /// A set that refuses everything under the given top-level names (`de`, `en`, `_fs`,
-    /// `sitemap.xml`, …).
+    /// A set that refuses everything under [`ALWAYS_RESERVED`] and under the given names
+    /// (`de`, `en`, a nested site's folder, …; several segments allowed).
     #[must_use]
     pub fn new(reserved: &[&str]) -> Self {
         Self {
-            reserved: reserved.iter().map(|s| (*s).to_string()).collect(),
+            reserved: ALWAYS_RESERVED
+                .iter()
+                .chain(reserved)
+                .map(|s| (*s).to_string())
+                .collect(),
             ..Self::default()
         }
     }
