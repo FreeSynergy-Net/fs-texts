@@ -15,6 +15,13 @@
 - Limits, stated plainly: writing with formatting (U3, the text shown formatted while it is written) is NOT done in 0.0.13: the writing surface shows raw Markdown; it follows in a later version. The window tests drive the click in process through the window's router, not with a real mouse in a started program. Known limits of the look: the border of an empty box has a contrast of 1.59:1 against the page, below 3:1 (WCAG 1.4.11); fixed with fs-components 0.0.21. The way to the page (breadcrumb) shows the path segment of a subpage ("handbook") instead of its title ("Handbook"); it is made in fs-components, follow-up there. Pre-release: not a final release, for trying out.
 - **Socket and data folder of the renamed program (fs-wiki becomes fs-texts, ADR 0087):** the socket is `texts.sock`; the data folder of the server stays `freesynergy/wiki` for now (the data of the user, nothing is moved). Transition: if an old 0.0.12 server still runs on `wiki.sock` (an old window is open), a new window starts a second server on `texts.sock`; the database is locked exclusively, so the second server fails when it opens it, until the old window is closed (never two writers).
 
+#### Known issues
+
+- b2: when Enter is pressed at the end of a page, the text briefly scrolls out of the picture until the next key; the data stay.
+- b3: a double click does not select a word; the selection in the block menu is hardly visible.
+- b4: the block menu looks see-through.
+- Cause: the text field of Blinc (`text_area`) / `fs-components`; fix planned for 0.0.14.
+
 ### Deutsch
 
 - **Server geht nach dem Start weg, leerer Zustand, Diagnose, Titel nach Programm/Facette.** Das Fenster fragt seinen Server alle 3 s (`window_link.rs`, `mode_link.rs`); antwortet er nicht, nennt die Statuszeile Programm (oder Facette), Socket und Fehler, das Menü Seite ist mit diesem Grund gesperrt, und ein Fenster bietet „Neu verbinden“ (startet das Programm neu, das den Server startet). „Nichts anzuzeigen“ sagt jetzt, was zu tun ist. `fs-texts --diagnose` gibt Pfade, Rechte, Antwort des Servers, Version und Lease als Text aus (ohne Display, startet nichts). Der Titel des Startproblem-Fensters folgt dem Programm („Texte kann nicht starten“) bzw. der Facette (`--facet wiki`: „Das Wiki kann nicht starten“). Nicht gesetzte Menüs, nicht gezeichneter Seitenbaum und eine nicht haltbare Lease stehen ebenfalls im Fenster. Nicht erledigt: der Bearbeiten-Knopf von `fs-components` 0.0.20 wird bei nicht bearbeitbarer Seite nicht gezeichnet (Grund in Statuszeile und Menü).
@@ -25,6 +32,13 @@
 - **Tests an 0.0.20 angepasst:** `editor_width` (der Editor hat keinen Rahmen mehr: die Breite wird an einem langen umbrochenen Absatz gemessen), `window_tasks` (Tabellentext in Fließtextgröße, lange Wörter brechen um: 4 statt 3 Zeilen), `tree_after_save` (die Seitenliste wird nach dem Speichern auch ohne unseren Haken neu gemacht; die Gegenprobe entfällt, der Haken bleibt). Ursache geprüft: es ist der Wächter des Fensters aus dieser Version (der Baum folgt einer geänderten Liste des Lesers binnen 200 ms), nicht fs-components 0.0.20: ohne Wächter besteht die Gegenprobe, mit ihm ist sie rot. Der Test der neuen Seite (`window_tree.rs`) verlangt jetzt, dass die offene Seite die Markierung hat und die anderen nicht, und ein Bild zeigt es (über den Dialog angelegt).
 - Grenzen, ehrlich: formatiertes Schreiben (U3, der Text erscheint beim Schreiben schon formatiert) ist in 0.0.13 NICHT fertig: die Schreibfläche zeigt rohes Markdown; es folgt in einer späteren Version. Die Fenstertests klicken im Prozess über den Router des Fensters, nicht mit einer echten Maus im gestarteten Programm. Bekannte Grenzen des Aussehens: der Rand eines leeren Kästchens hat gegen die Seite einen Kontrast von 1,59:1, unter 3:1 (WCAG 1.4.11); behoben mit fs-components 0.0.21. Die Brotkrume zeigt bei einer Unterseite das Pfadsegment („handbook“) statt des Titels („Handbook“); sie entsteht in fs-components, Folgeauftrag dort. Pre-release: keine endgültige Fassung, zum Ausprobieren.
 - **Socket und Datenordner des umbenannten Programms (fs-wiki wird fs-texts, ADR 0087):** der Socket ist `texts.sock`; der Datenordner des Servers bleibt vorerst `freesynergy/wiki` (Daten des Nutzers, nichts wird verschoben). Übergang: läuft noch ein alter 0.0.12-Server auf `wiki.sock` (ein altes Fenster ist offen), startet ein neues Fenster einen zweiten Server auf `texts.sock`; die Datenbank ist exklusiv gesperrt, der zweite Server scheitert beim Öffnen, bis das alte Fenster geschlossen ist (nie zwei Schreiber).
+
+#### Bekannte Fehler
+
+- b2: Drückt man am Ende der Seite Enter, scrollt der Text kurz aus dem Bild, bis zur nächsten Taste; die Daten bleiben.
+- b3: Ein Doppelklick markiert kein Wort; die Markierung im Blockmenü ist kaum sichtbar.
+- b4: Das Blockmenü scheint durchsichtig.
+- Ursache: Textfeld von Blinc (`text_area`) / `fs-components`; Fix für 0.0.14.
 
 ## 0.0.12 (in progress)
 
