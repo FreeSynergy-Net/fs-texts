@@ -30,6 +30,11 @@ pub struct Rig {
 }
 
 pub fn rig(german: bool) -> Rig {
+    rig_in(german, Frontend::Confluence)
+}
+
+/// The same rig with the window in another frontend.
+pub fn rig_in(german: bool, frontend: Frontend) -> Rig {
     let (rt, fixture) = common::wiki();
     let wiki = fixture.wiki().texts();
     for (path, text) in [
@@ -58,8 +63,7 @@ pub fn rig(german: bool) -> Rig {
         settings: None,
         pages: Some(maker),
     };
-    let (app, modal) =
-        window_with_modal("Wiki", reader.clone(), Frontend::Confluence, setup).unwrap();
+    let (app, modal) = window_with_modal("Wiki", reader.clone(), frontend, setup).unwrap();
     Rig {
         rt,
         wiki,
@@ -162,5 +166,46 @@ impl Rig {
         fs_components::blinc::core::reactive::set_stateful_deps_notifier(|ids| {
             fs_components::blinc::layout::check_stateful_deps(ids);
         });
+    }
+}
+
+impl Rig {
+    /// The window laid out as the picture lays it out: the same element, the style sheet of the program with Blinc's default look
+    /// ahead of it, the rules for layout applied.
+    pub fn window_layout(&self, w: f32, h: f32) -> fs_components::blinc::layout::prelude::RenderTree {
+        use fs_components::blinc::layout::css_parser::Stylesheet;
+        use fs_components::blinc::layout::prelude::RenderTree;
+        let mut tree = RenderTree::from_element(&self.app.build(w, h));
+        let bundle = fs_components_render::bundle(&self.app.styles());
+        let vars = fs_components::blinc::theme::ThemeState::get().to_css_variable_map();
+        let mut css = String::from(fs_components::blinc::layout::ua_styles::UA_STYLES);
+        for sheet in &bundle.css_sources {
+            css.push('\n');
+            css.push_str(sheet);
+        }
+        tree.set_stylesheet(Stylesheet::parse_with_variables(&css, &vars).expect("style sheet"));
+        tree.apply_stylesheet_layout_overrides();
+        tree.apply_stylesheet_base_styles();
+        tree.compute_layout(w, h);
+        tree
+    }
+
+    /// Does the page tree of the window have a row for `path`?
+    pub fn tree_has(&self, path: &str) -> bool {
+        self.window_layout(1000.0, 700.0)
+            .query_by_id(&format!("fs-wk-row-{path}"))
+            .is_some()
+    }
+
+    /// Wait (at most five seconds) until the page tree has a row for `path`; the window makes the tree again in a thread.
+    pub fn tree_gets(&self, path: &str) -> bool {
+        let began = Instant::now();
+        while began.elapsed() < Duration::from_secs(5) {
+            if self.tree_has(path) {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        false
     }
 }
