@@ -20,6 +20,34 @@ use fs_wiki_app::window_modal::ModalSlot;
 use fs_wiki_core::{Paging, Texts};
 use tokio::runtime::Runtime;
 
+/// Where the pictures of a test go: the folder named by `FS_WIKI_SHOTS`, else a folder of its own (unique name), removed
+/// with this value after the test.
+pub struct Shots {
+    dir: std::path::PathBuf,
+    _own: Option<tempfile::TempDir>,
+}
+
+impl Shots {
+    pub fn new() -> Self {
+        if let Some(dir) = std::env::var_os("FS_WIKI_SHOTS") {
+            std::fs::create_dir_all(&dir).unwrap();
+            return Self {
+                dir: dir.into(),
+                _own: None,
+            };
+        }
+        let own = tempfile::tempdir().unwrap();
+        Self {
+            dir: own.path().to_path_buf(),
+            _own: Some(own),
+        }
+    }
+
+    pub fn file(&self, name: &str) -> std::path::PathBuf {
+        self.dir.join(name)
+    }
+}
+
 pub struct Rig {
     pub rt: Runtime,
     pub wiki: Arc<dyn Texts>,

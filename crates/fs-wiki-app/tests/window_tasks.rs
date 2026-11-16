@@ -171,10 +171,8 @@ fn the_table_of_the_user_test_does_not_break_in_the_window() {
     let r = rig(true);
     r.make("tabelle.md", USER_TABLE);
     r.open("tabelle.md");
-    let dir =
-        std::env::var_os("FS_WIKI_SHOTS").map_or_else(std::env::temp_dir, std::path::PathBuf::from);
-    std::fs::create_dir_all(&dir).unwrap();
-    let file = dir.join("wiki-0012-tabelle-mitte.png");
+    let shots = page_rig::Shots::new();
+    let file = shots.file("wiki-0012-tabelle-mitte.png");
     if r.window_picture(1400, 700, &file).is_err() {
         eprintln!("skipped: no graphics");
         return;

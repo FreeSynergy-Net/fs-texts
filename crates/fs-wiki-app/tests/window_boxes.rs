@@ -41,10 +41,8 @@ fn the_picture_shows_the_state_of_every_box_with_the_styles_of_the_program() {
     r.open("aufgaben.md");
     r.warm_up();
     let tree = r.window_layout(1000.0, 700.0);
-    let dir =
-        std::env::var_os("FS_WIKI_SHOTS").map_or_else(std::env::temp_dir, std::path::PathBuf::from);
-    std::fs::create_dir_all(&dir).unwrap();
-    let file = dir.join("wiki-0012-kaestchen.png");
+    let shots = page_rig::Shots::new();
+    let file = shots.file("wiki-0012-kaestchen.png");
     if r.window_picture(1000, 700, &file).is_err() {
         eprintln!("skipped: no graphics");
         return;

@@ -49,9 +49,8 @@ fn a_page_made_in_the_window_is_in_the_tree_and_marked() {
         }
         if frontend == Frontend::Notion {
             // The picture of the window after the dialog: the new page stands in the tree and is marked.
-            let dir = std::env::var_os("FS_WIKI_SHOTS").map_or_else(std::env::temp_dir, Into::into);
-            std::fs::create_dir_all(&dir).unwrap();
-            r.window_picture(1000, 700, &dir.join("seite-ueber-dialog-im-baum.png"))
+            let shots = page_rig::Shots::new();
+            r.window_picture(1000, 700, &shots.file("seite-ueber-dialog-im-baum.png"))
                 .unwrap();
         }
     }
