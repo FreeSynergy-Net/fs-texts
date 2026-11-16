@@ -135,6 +135,8 @@ fn the_tree_shows_the_title_that_was_saved() {
     );
 }
 
-// The counter-proof of the test above ("without the hook the tree stays as it was") is gone with fs-components 0.0.20: with
-// that version the page list is made again after a save even when the source does not tell the window (checked: the picture
-// after the save shows the new title without the hook). The hook stays (other versions, other sources); see BERICHT.md.
+// The counter-proof of the test above ("without the hook the tree stays as it was") is gone because of the watcher of the
+// window (`watch_state` in `frontend_window.rs`, 0.0.13): it compares the list of the reader with the one the tree was made
+// from every 200 ms and makes the tree again, so the title shows after a save even when the source does not tell the window.
+// Checked: with the comparison switched off the counter-proof passes again (fs-components 0.0.20 unchanged); with it on, it is
+// red. The hook stays: it makes the tree at once, not after the next look of the watcher, and other sources need it.
