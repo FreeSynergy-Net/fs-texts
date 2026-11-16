@@ -11,8 +11,9 @@ use std::path::{Path, PathBuf};
 use fs_interfaces::rpc::{CommandStarter, Expected, FACET_FLAG, companion_path};
 use fs_texts_client::{RpcTexts, Timeouts};
 
-use crate::args::{HELP, parse};
+use crate::args::{Args, HELP, parse};
 use crate::server::socket_path;
+use crate::start_problem::{Problem, preflight};
 use crate::words::{self, say};
 
 /// Run the window program with the words after the program name.
@@ -29,13 +30,37 @@ pub fn run(words: &[String]) -> Result<(), String> {
         println!("{HELP}");
         return Ok(());
     }
-    let socket = socket_path(args.socket.as_deref())?;
-    let texts = connect_or_start(&socket, args.socket.is_some(), args.facet.as_deref())?;
-    match mode(&args) {
-        Mode::Wiki => crate::mode_read::run(&args, texts),
-        Mode::Reader => crate::mode_reader::run(&args, texts),
-        Mode::Admin => crate::mode_admin::run(&args, texts),
+    match start(&args) {
+        Ok(texts) => match mode(&args) {
+            Mode::Wiki => crate::mode_read::run(&args, texts)
+                .or_else(|e| stopped(&args, words, &Problem::Failed(e))),
+            Mode::Reader => crate::mode_reader::run(&args, texts),
+            Mode::Admin => crate::mode_admin::run(&args, texts),
+        },
+        Err(problem) => stopped(&args, words, &problem),
     }
+}
+
+/// The server of this version: the folders the start needs are looked at first, then the handshake.
+fn start(args: &Args) -> Result<RpcTexts, Problem> {
+    let socket = socket_path(args.socket.as_deref()).map_err(|_| Problem::NoSocket)?;
+    let data = crate::store_path::data_dir();
+    if let Some(problem) = preflight(&socket, args.socket.is_some(), data.as_deref()) {
+        return Err(problem);
+    }
+    connect_or_start(&socket, args.socket.is_some(), args.facet.as_deref())
+}
+
+/// The start stopped: the reason goes to stderr and, for the wiki window, into a window of its own with a button to try
+/// again (never a grey or missing window without a sentence). The other modes and the headless runs end with the reason.
+fn stopped(args: &Args, words: &[String], problem: &Problem) -> Result<(), String> {
+    let german = crate::frontend::is_german(args);
+    let said = problem.say(&crate::ui_texts::UiTexts::new(german));
+    if mode(args) != Mode::Wiki || args.snapshot.is_some() || args.check {
+        return Err(said);
+    }
+    eprintln!("fs-texts: {said}");
+    crate::problem_window::show(problem, german, words)
 }
 
 /// Which window the arguments ask for.
@@ -70,18 +95,26 @@ fn connect_or_start(
     socket: &Path,
     own_socket: bool,
     facet: Option<&str>,
-) -> Result<RpcTexts, String> {
+) -> Result<RpcTexts, Problem> {
     // This window is a user of the server for as long as it lives: the shared lock is let go by the system when the
     // process ends. A server this window starts ends itself when no window holds the lease any more.
     let lease = companion_path(socket, "lease");
     hold_lease(&lease);
-    let starter = starter(socket, &lease, own_socket, facet)?;
+    let (starter, command) = starter(socket, &lease, own_socket, facet).map_err(Problem::Failed)?;
     let expected = Expected::new(env!("CARGO_PKG_VERSION"));
     RpcTexts::connect_matching(socket, &expected, &starter, timeouts()).map_err(|e| {
-        say(
-            words::HANDSHAKE,
-            &[("path", &socket.display()), ("error", &e)],
-        )
+        eprintln!(
+            "fs-texts: {}",
+            say(
+                words::HANDSHAKE,
+                &[("path", &socket.display()), ("error", &e)]
+            )
+        );
+        Problem::Server {
+            command,
+            socket: socket.to_path_buf(),
+            error: e.to_string(),
+        }
     })
 }
 
@@ -93,7 +126,7 @@ fn starter(
     lease: &Path,
     own_socket: bool,
     facet: Option<&str>,
-) -> Result<CommandStarter, String> {
+) -> Result<(CommandStarter, String), String> {
     let me = std::env::current_exe().map_err(|e| e.to_string())?;
     let name = me.file_name().and_then(|n| n.to_str()).unwrap_or_default();
     // `serve` is not a word of the window-only program: its server is the binary next to it.
@@ -109,7 +142,11 @@ fn starter(
     if let Some(facet) = facet {
         words.extend([FACET_FLAG.into(), facet.into()]);
     }
-    Ok(CommandStarter::new(program, words))
+    let command = std::iter::once(program.display().to_string())
+        .chain(words.iter().map(|w| w.to_string_lossy().into_owned()))
+        .collect::<Vec<_>>()
+        .join(" ");
+    Ok((CommandStarter::new(program, words), command))
 }
 
 /// Hold the shared lock on `path` until this process ends.

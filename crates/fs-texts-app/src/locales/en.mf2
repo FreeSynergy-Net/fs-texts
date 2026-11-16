@@ -96,3 +96,12 @@ admin-type-folder = Folders
 admin-type-revision = History
 admin-type-trash = Trash
 admin-type-link = Links
+
+start-title = The wiki cannot start
+start-retry = Try again
+start-close-old = If an older fs-texts or fs-wiki window is still open, close it first: it holds the wiki database.
+problem-no-socket = No place for the server socket: XDG_RUNTIME_DIR is not set (log in with a full desktop session, or start with --socket PATH).
+problem-runtime-folder = The folder for the server socket cannot be written: {$path}. Check its owner and permissions (it must belong to the user who runs the window), or start with --socket PATH.
+problem-data-folder = The data folder of the wiki cannot be written: {$path}. Check its owner and permissions (it must belong to the user who runs the window), or choose another place with XDG_DATA_HOME.
+problem-server = No wiki server could be reached or started on {$path}. The window ran: {$command}. The answer was: {$error}.
+problem-failed = The start failed: {$error}.

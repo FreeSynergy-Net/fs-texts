@@ -96,3 +96,12 @@ admin-type-folder = Ordner
 admin-type-revision = Verlauf
 admin-type-trash = Papierkorb
 admin-type-link = Links
+
+start-title = Das Wiki kann nicht starten
+start-retry = Erneut versuchen
+start-close-old = Ist noch ein älteres fs-texts- oder fs-wiki-Fenster offen, bitte zuerst schließen: es hält die Datenbank des Wikis.
+problem-no-socket = Kein Ort für den Server-Socket: XDG_RUNTIME_DIR ist nicht gesetzt (mit einer vollen Desktop-Sitzung anmelden oder mit --socket PFAD starten).
+problem-runtime-folder = Der Ordner für den Server-Socket ist nicht beschreibbar: {$path}. Besitzer und Rechte prüfen (er muss dem Benutzer gehören, der das Fenster startet) oder mit --socket PFAD starten.
+problem-data-folder = Der Datenordner des Wikis ist nicht beschreibbar: {$path}. Besitzer und Rechte prüfen (er muss dem Benutzer gehören, der das Fenster startet) oder mit XDG_DATA_HOME einen anderen Ort wählen.
+problem-server = Auf {$path} konnte kein Wiki-Server erreicht oder gestartet werden. Das Fenster hat ausgeführt: {$command}. Die Antwort war: {$error}.
+problem-failed = Der Start ist fehlgeschlagen: {$error}.
