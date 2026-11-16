@@ -119,7 +119,14 @@ impl Switcher {
                 let tree_old =
                     *me.listed.lock().unwrap_or_else(PoisonError::into_inner) != me.list_now();
                 if tree_old {
-                    me.remake_tree();
+                    // A tree that cannot be drawn now (no graphics set up yet) must not end this look: the menus below
+                    // follow the reader all the same (the tree itself is made, only the draw failed).
+                    let made = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        me.remake_tree();
+                    }));
+                    if made.is_err() {
+                        eprintln!("fs-wiki: the page tree was made but not drawn");
+                    }
                 }
                 let last = *me.menu_state.lock().unwrap_or_else(PoisonError::into_inner);
                 if !open && last != Some(me.page_state()) && me.setup.pages.is_some() {
