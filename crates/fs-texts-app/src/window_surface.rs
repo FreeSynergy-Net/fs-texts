@@ -32,15 +32,20 @@ pub const EDITOR_STYLES: &str = "
 .fs-texts-brand { display: flex; flex-direction: row; align-items: center; gap: var(--space-2); font-weight: 700; }
 ";
 
+/// The words of the empty state, asked when it is drawn.
+pub(crate) type WordsOf = Arc<dyn Fn() -> EmptyWords + Send + Sync>;
+/// Why pages cannot be changed now, asked when the page is drawn.
+pub(crate) type WhyOf = Arc<dyn Fn() -> Option<String> + Send + Sync>;
+
 /// The one surface: the reader, the bar of Confluence and the modal over the page.
 pub(crate) struct ReaderSurface {
     pub(crate) widget: Mutex<ReaderWidget>,
     pub(crate) modal: Arc<ModalSlot>,
     pub(crate) confluence: AtomicBool,
     /// What the window says while the wiki has no page, and what its button does; none = the reader's layout always.
-    pub(crate) empty: Mutex<Option<(Arc<dyn Fn() -> EmptyWords + Send + Sync>, OnNew)>>,
+    pub(crate) empty: Mutex<Option<(WordsOf, OnNew)>>,
     /// Why pages cannot be changed now (read only, server lost); none = they can. Shown as a line above the reader.
-    pub(crate) banner: Mutex<Option<Arc<dyn Fn() -> Option<String> + Send + Sync>>>,
+    pub(crate) banner: Mutex<Option<WhyOf>>,
     program: String,
     search: SearchField,
 }

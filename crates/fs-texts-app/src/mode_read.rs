@@ -253,7 +253,7 @@ fn with_drafts(reader: ReaderWidget, args: &Args) -> ReaderWidget {
             eprintln!("fs-texts: drafts are not backed up ({e})");
             crate::mode_link::drafts_failed(
                 crate::ui_texts::UiTexts::new(crate::frontend::is_german(args))
-                    .say("drafts-failed", &[("error", &e.to_string())]),
+                    .say("drafts-failed", &[("error", &e)]),
             );
             reader
         }

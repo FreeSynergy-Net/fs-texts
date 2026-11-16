@@ -88,9 +88,9 @@ fn lost_window(fail: bool, off: bool) -> (Arc<ModalSlot>, Arc<Store>, Arc<Atomic
         notes: vec![],
         every: Duration::from_millis(40),
     };
-    let (_app, modal) =
+    let (app, modal) =
         window_linked("Texts", reader, Frontend::Confluence, setup, Some(link)).unwrap();
-    std::mem::forget((rt, fixture, _app));
+    std::mem::forget((rt, fixture, app));
     let end = Instant::now() + Duration::from_secs(20);
     while !modal.is_open() && Instant::now() < end {
         std::thread::sleep(Duration::from_millis(30));
