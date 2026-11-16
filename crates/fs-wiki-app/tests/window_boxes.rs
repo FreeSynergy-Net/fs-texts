@@ -22,7 +22,10 @@ fn to_px(v: f32) -> u32 {
 const BOXES: &str = "# Aufgaben\n\n| Name | Test |\n| --- | :---: |\n| Kal | - [ ] Test? |\n| Ada | [x] |\n\n- [ ] offen\n- [x] erledigt\n";
 
 /// (x, y, width, height) of the element with this id in the window of `width` x `height`.
-fn bounds_of(tree: &fs_components::blinc::layout::prelude::RenderTree, id: &str) -> (u32, u32, u32, u32) {
+fn bounds_of(
+    tree: &fs_components::blinc::layout::prelude::RenderTree,
+    id: &str,
+) -> (u32, u32, u32, u32) {
     let node = tree
         .query_by_id(id)
         .unwrap_or_else(|| panic!("no element {id}"));

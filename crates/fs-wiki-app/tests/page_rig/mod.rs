@@ -172,7 +172,11 @@ impl Rig {
 impl Rig {
     /// The window laid out as the picture lays it out: the same element, the style sheet of the program with Blinc's default look
     /// ahead of it, the rules for layout applied.
-    pub fn window_layout(&self, w: f32, h: f32) -> fs_components::blinc::layout::prelude::RenderTree {
+    pub fn window_layout(
+        &self,
+        w: f32,
+        h: f32,
+    ) -> fs_components::blinc::layout::prelude::RenderTree {
         use fs_components::blinc::layout::css_parser::Stylesheet;
         use fs_components::blinc::layout::prelude::RenderTree;
         let mut tree = RenderTree::from_element(&self.app.build(w, h));

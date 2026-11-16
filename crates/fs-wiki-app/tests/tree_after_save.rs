@@ -109,6 +109,8 @@ fn saved_changes_the_sidebar(call_hook: bool) -> bool {
     let app = window("Wiki", reader.clone(), Frontend::Confluence, setup).expect("window");
     let dir = tempfile::tempdir().unwrap();
     let file = dir.path().join("w.png");
+    // The first picture of a process sets Blinc up (fs-components 0.0.20 gives the picture the window styles); the second is the base.
+    let _ = sidebar(&app, &file);
     let before = sidebar(&app, &file);
     reader.with_reader(|r| {
         r.begin_edit();
@@ -133,11 +135,6 @@ fn the_tree_shows_the_title_that_was_saved() {
     );
 }
 
-#[test]
-fn without_the_hook_the_tree_stays_as_it_was() {
-    // The counter-proof of the test above, kept as a test: the same run, the source does not tell the window.
-    assert!(
-        !saved_changes_the_sidebar(false),
-        "the sidebar changed without the hook"
-    );
-}
+// The counter-proof of the test above ("without the hook the tree stays as it was") is gone with fs-components 0.0.20: with
+// that version the page list is made again after a save even when the source does not tell the window (checked: the picture
+// after the save shows the new title without the hook). The hook stays (other versions, other sources); see BERICHT.md.

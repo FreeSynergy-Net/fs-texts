@@ -66,5 +66,8 @@ fn counter_proof_a_list_changed_behind_the_window_is_not_in_the_tree() {
     std::thread::sleep(std::time::Duration::from_millis(700));
     assert!(!r.tree_has("lost.md"));
     r.reader.with_reader(Reader::refresh_entries);
-    assert!(r.tree_gets("lost.md"), "the window follows the reader's list");
+    assert!(
+        r.tree_gets("lost.md"),
+        "the window follows the reader's list"
+    );
 }

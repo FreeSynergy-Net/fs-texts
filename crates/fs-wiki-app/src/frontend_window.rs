@@ -116,7 +116,8 @@ impl Switcher {
                     .with_shell(fs_components_app::Shell::open_menu)
                     .is_some();
                 // The list was read again by whoever changed the pages (the reader holds it, the tree is a copy): the tree follows.
-                let tree_old = *me.listed.lock().unwrap_or_else(PoisonError::into_inner) != me.list_now();
+                let tree_old =
+                    *me.listed.lock().unwrap_or_else(PoisonError::into_inner) != me.list_now();
                 if tree_old {
                     me.remake_tree();
                 }
@@ -258,7 +259,10 @@ pub fn window_with_modal(
         menu_state: Mutex::default(),
         listed: Mutex::default(),
     });
-    *switcher.listed.lock().unwrap_or_else(PoisonError::into_inner) = switcher.list_now();
+    *switcher
+        .listed
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner) = switcher.list_now();
     switcher.watch_saves();
     switcher.install(shown)?;
     switcher.watch_state();
