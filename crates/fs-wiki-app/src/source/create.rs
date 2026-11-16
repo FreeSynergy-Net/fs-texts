@@ -61,6 +61,11 @@ pub trait PageMaker: Send + Sync {
     /// Whether pages can be made (not in a read only window).
     fn can_create(&self) -> bool;
 
+    /// Why pages cannot be made, with what can be done about it; none = say the plain words.
+    fn locked_reason(&self) -> Option<String> {
+        None
+    }
+
     /// Make a page called `title` (numbered when taken) below `parent` (a page; `None` = the top level) and return its
     /// path. The text is the title as a first-level heading.
     ///
@@ -165,6 +170,10 @@ pub fn page_path(parent: Option<&str>, title: &str) -> Option<String> {
 impl PageMaker for WikiSource {
     fn can_create(&self) -> bool {
         !self.read_only
+    }
+
+    fn locked_reason(&self) -> Option<String> {
+        self.locked.clone()
     }
 
     fn on_saved(&self, hook: SavedHook) {

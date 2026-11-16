@@ -75,8 +75,12 @@ pub fn run(args: &Args, texts: RpcTexts) -> Result<(), String> {
         WikiSource::from_report(wiki.texts(), runtime.handle().clone(), report).with_nav(nav);
     // The plain start edits the wiki of the server; the documentation read from folders (`--read` with sources) stays
     // read only unless `--edit`; `--read-only` always wins.
-    if args.read_only || (!args.sources.is_empty() && !args.edit) {
-        source = source.read_only();
+    // The window says why and what can be done (no silent grey entries).
+    let folder = records.parent().unwrap_or(std::path::Path::new("."));
+    if let Some(why) =
+        crate::start_access::start_lock(args, folder, crate::frontend::is_german(args))
+    {
+        source = source.read_only_because(why);
     }
     // An override on the command line never writes: no settings file is given to the window then. (A picture only
     // reads it.)

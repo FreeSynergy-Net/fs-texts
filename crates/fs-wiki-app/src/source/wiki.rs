@@ -47,6 +47,8 @@ pub struct WikiSource {
     pub(super) nav: crate::nav::Nav,
     /// Reading only: no editing, no export (the first cut of the reading wiki).
     pub(super) read_only: bool,
+    /// Why it cannot be edited and what can be done (shown in the locked entries); none = the plain words.
+    pub(super) locked: Option<String>,
     /// Pages with language variants (`pages.rs`); none = every text is a page of its own.
     pub(super) pages: Option<super::pages::PagesView>,
     /// The frontend draws the language switch and the notices itself: the page text has no language bar on top.

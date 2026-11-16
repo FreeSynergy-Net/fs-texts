@@ -29,6 +29,7 @@ impl WikiSource {
             difference: Mutex::new(None),
             nav: crate::nav::Nav::default(),
             read_only: false,
+            locked: None,
             pages: None,
             bare: Arc::default(),
             heads: None,
@@ -54,6 +55,7 @@ impl WikiSource {
             difference: Mutex::new(None),
             nav: crate::nav::Nav::default(),
             read_only: false,
+            locked: None,
             pages: None,
             bare: Arc::default(),
             heads: None,
@@ -106,6 +108,14 @@ impl WikiSource {
     #[must_use]
     pub fn read_only(mut self) -> Self {
         self.read_only = true;
+        self
+    }
+
+    /// Reading only, with the reason and the way out (what the locked entries of the menu say instead of the plain words).
+    #[must_use]
+    pub fn read_only_because(mut self, reason: String) -> Self {
+        self.read_only = true;
+        self.locked = Some(reason);
         self
     }
 

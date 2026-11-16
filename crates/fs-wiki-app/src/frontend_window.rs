@@ -77,7 +77,11 @@ impl Switcher {
         let mut all = menus(shown, self.setup.german);
         let state = self.page_state();
         if self.setup.pages.is_some() {
-            all.insert(1, page_menu(&page_words(self.setup.german), state));
+            let mut words = page_words(self.setup.german);
+            if let Some(why) = self.setup.pages.as_ref().and_then(|p| p.locked_reason()) {
+                words.read_only = why;
+            }
+            all.insert(1, page_menu(&words, state));
         }
         *self
             .menu_state
@@ -272,6 +276,15 @@ pub fn window_with_modal(
         .unwrap_or_else(PoisonError::into_inner) = switcher.list_now();
     switcher.watch_saves();
     switcher.install(shown)?;
+    // Locked for a reason: the window says it in the status line too, not only in the grey entries.
+    if let Some(why) = switcher
+        .setup
+        .pages
+        .as_ref()
+        .and_then(|p| p.locked_reason())
+    {
+        app.set_status(Some(Status::Problem(why)));
+    }
     switcher.watch_state();
     Ok((app, modal))
 }
