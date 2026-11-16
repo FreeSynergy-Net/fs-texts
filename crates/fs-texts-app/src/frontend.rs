@@ -134,7 +134,7 @@ pub(crate) fn is_german(args: &Args) -> bool {
         .map_or_else(env_is_german, |l| l == "de")
 }
 
-fn env_is_german() -> bool {
+pub(crate) fn env_is_german() -> bool {
     ["LC_ALL", "LC_MESSAGES", "LANG"]
         .into_iter()
         .filter_map(|v| std::env::var(v).ok())

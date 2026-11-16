@@ -9,17 +9,18 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
-use fs_components_app::{AppError, AppWidget, Screen, Status, Surface};
+use fs_components_app::{AppError, AppWidget, Status};
 use fs_components_workbenches::{ReaderWidget, WikiLabels};
 
 use crate::frontend::{self, Frontend};
 use crate::page_words::page_words;
 use crate::source::PageMaker;
 use crate::ui_texts::UiTexts;
-use crate::window_modal::ModalSlot;
+use crate::window_link::Link;
 pub use crate::window_surface::EDITOR_STYLES;
 use crate::window_surface::ReaderSurface;
 
+pub use crate::window_make::{window, window_linked, window_with_modal};
 pub use crate::window_menu::{
     FRONTEND_PREFIX, PAGE_DELETE, PAGE_DISCARD, PAGE_NEW, PAGE_RENAME, PAGE_SUB, PageState, QUIT,
     menus, page_menu,
@@ -49,9 +50,13 @@ pub(crate) struct Switcher {
     /// Pages made in this window and not saved since: path -> the revision they had when made.
     pub(crate) fresh: Mutex<HashMap<String, String>>,
     /// The state the menus were last set for.
-    menu_state: Mutex<Option<PageState>>,
+    pub(crate) menu_state: Mutex<Option<PageState>>,
     /// The list (path, title) the page tree was last made from.
-    listed: Mutex<Vec<(String, String)>>,
+    pub(crate) listed: Mutex<Vec<(String, String)>>,
+    /// What the window knows about its server; none = no watch (a picture, a test).
+    pub(crate) link: Option<Link>,
+    /// Why the server cannot be used now (the sentence of the status line); none = it answers.
+    pub(crate) lost: Mutex<Option<String>>,
 }
 
 impl Switcher {
@@ -66,7 +71,8 @@ impl Switcher {
             .current()
             .with_reader(|r| (r.current_path().is_some(), r.editing().is_some()));
         PageState {
-            can_edit: self.setup.pages.as_ref().is_some_and(|p| p.can_create()),
+            can_edit: self.setup.pages.as_ref().is_some_and(|p| p.can_create())
+                && self.lost().is_none(),
             open,
             editing,
         }
@@ -81,6 +87,10 @@ impl Switcher {
             if let Some(why) = self.setup.pages.as_ref().and_then(|p| p.locked_reason()) {
                 words.read_only = why;
             }
+            // The server is gone: that is the reason of the locked entries, before any other.
+            if self.lost().is_some() {
+                words.read_only = self.texts().plain("reason-lost");
+            }
             all.insert(1, page_menu(&words, state));
         }
         *self
@@ -91,7 +101,7 @@ impl Switcher {
     }
 
     /// The list of the reader as the tree shows it.
-    fn list_now(&self) -> Vec<(String, String)> {
+    pub(crate) fn list_now(&self) -> Vec<(String, String)> {
         self.base.with_reader(|r| {
             r.entries()
                 .iter()
@@ -111,7 +121,7 @@ impl Switcher {
     /// Set the menus again when what decides them changed (a page was opened, an edit began or ended): the reader changes by
     /// clicks the window does not see, so a small thread of the window looks now and then. A menu that is open is left
     /// alone (setting menus closes it); the next look sets it.
-    fn watch_state(self: &Arc<Self>) {
+    pub(crate) fn watch_state(self: &Arc<Self>) {
         let me = Arc::downgrade(self);
         std::thread::spawn(move || {
             while let Some(me) = me.upgrade() {
@@ -129,12 +139,18 @@ impl Switcher {
                         me.remake_tree();
                     }));
                     if made.is_err() {
-                        eprintln!("fs-texts: the page tree was made but not drawn");
+                        let said = me.texts().plain("tree-not-drawn");
+                        eprintln!("fs-texts: {said}");
+                        me.problem(said);
                     }
                 }
                 let last = *me.menu_state.lock().unwrap_or_else(PoisonError::into_inner);
-                if !open && last != Some(me.page_state()) && me.setup.pages.is_some() {
-                    let _ = me.install(me.shown());
+                if !open
+                    && last != Some(me.page_state())
+                    && me.setup.pages.is_some()
+                    && let Err(e) = me.install(me.shown())
+                {
+                    me.menus_failed(&e);
                 }
                 drop(me);
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -189,7 +205,7 @@ impl Switcher {
     /// The page tree is made again after every saved edit: the title of the page may be another one now (it is the first
     /// heading). The tree is shared by the clones of the reader widget, so making it on a clone is enough; the save still holds
     /// the reader, so this waits in a thread of its own for the end of the save, then draws the page and the tree again.
-    fn watch_saves(self: &Arc<Self>) {
+    pub(crate) fn watch_saves(self: &Arc<Self>) {
         let Some(pages) = &self.setup.pages else {
             return;
         };
@@ -219,72 +235,7 @@ impl Switcher {
         }
         // Setting the menus draws everything again, with the mark on the new frontend.
         if let Err(e) = self.install(chosen) {
-            eprintln!("fs-texts: the menus are not set ({e})");
+            self.menus_failed(&e);
         }
     }
-}
-
-/// The window, not yet opened: the reader in the frontend `shown`, with the menus.
-///
-/// # Errors
-/// The shell cannot be built.
-pub fn window(
-    title: &str,
-    reader: ReaderWidget,
-    shown: Frontend,
-    setup: Setup,
-) -> Result<AppWidget, AppError> {
-    window_with_modal(title, reader, shown, setup).map(|(app, _)| app)
-}
-
-/// [`window`], and the slot of its modal: what a test (or another part of the program) uses to answer a dialog without a
-/// click (`ModalSlot::submit`, `yes`, `no`).
-///
-/// # Errors
-/// The shell cannot be built.
-pub fn window_with_modal(
-    title: &str,
-    reader: ReaderWidget,
-    shown: Frontend,
-    setup: Setup,
-) -> Result<(AppWidget, Arc<ModalSlot>), AppError> {
-    setup.bare.store(shown.has_own_head(), Ordering::Relaxed);
-    let widget = reader.clone().layout(shown.layout(), setup.labels.clone());
-    let hint = reader.with_reader(|r| r.labels().search.clone());
-    let surface = Arc::new(ReaderSurface::new(
-        widget,
-        &setup.labels.program,
-        &hint,
-        shown,
-    ));
-    let modal = Arc::clone(&surface.modal);
-    let screen = Screen::new("reader", title, Arc::clone(&surface) as Arc<dyn Surface>);
-    let app = AppWidget::new(title, vec![screen])?;
-    let switcher = Arc::new(Switcher {
-        app: app.clone(),
-        surface,
-        base: reader,
-        setup,
-        shown: Mutex::new(shown),
-        fresh: Mutex::default(),
-        menu_state: Mutex::default(),
-        listed: Mutex::default(),
-    });
-    *switcher
-        .listed
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner) = switcher.list_now();
-    switcher.watch_saves();
-    switcher.install(shown)?;
-    // Locked for a reason: the window says it in the status line too, not only in the grey entries.
-    if let Some(why) = switcher
-        .setup
-        .pages
-        .as_ref()
-        .and_then(|p| p.locked_reason())
-    {
-        app.set_status(Some(Status::Problem(why)));
-    }
-    switcher.watch_state();
-    Ok((app, modal))
 }

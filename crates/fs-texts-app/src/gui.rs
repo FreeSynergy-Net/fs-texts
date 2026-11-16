@@ -14,6 +14,7 @@ use fs_texts_client::{RpcTexts, Timeouts};
 use crate::args::{Args, HELP, parse};
 use crate::server::socket_path;
 use crate::start_problem::{Problem, preflight};
+use crate::ui_texts::UiTexts;
 use crate::words::{self, say};
 
 /// Run the window program with the words after the program name.
@@ -28,6 +29,10 @@ pub fn run(words: &[String]) -> Result<(), String> {
     let args = parse(words)?;
     if args.help {
         println!("{HELP}");
+        return Ok(());
+    }
+    if args.diagnose {
+        println!("{}", crate::diagnose::report(&args));
         return Ok(());
     }
     match start(&args) {
@@ -60,7 +65,7 @@ fn stopped(args: &Args, words: &[String], problem: &Problem) -> Result<(), Strin
         return Err(said);
     }
     eprintln!("fs-texts: {said}");
-    crate::problem_window::show(problem, german, words)
+    crate::problem_window::show(problem, german, args.facet.as_deref(), words)
 }
 
 /// Which window the arguments ask for.
@@ -168,12 +173,23 @@ fn hold_lease(path: &Path) {
             Ok(()) => {
                 let _ = HELD.set(file);
             }
-            Err(e) => eprintln!(
-                "fs-texts: no lease ({e}): a server this window starts ends by itself after a while"
-            ),
+            Err(e) => lease_failed(path, &e),
         },
-        Err(e) => eprintln!("fs-texts: no lease file {} ({e})", path.display()),
+        Err(e) => lease_failed(path, &e),
     }
+}
+
+/// The lease could not be held: stderr and, as a note of the window, the status line say it.
+fn lease_failed(path: &Path, error: &std::io::Error) {
+    let said = UiTexts::new(crate::frontend::env_is_german()).say(
+        "link-no-lease",
+        &[
+            ("path", &path.display().to_string()),
+            ("error", &error.to_string()),
+        ],
+    );
+    eprintln!("fs-texts: {said}");
+    crate::mode_link::note(said);
 }
 
 /// Make `dir` (and what lacks above it) readable by the owner only; a failure is not reported here, the lease then says so.

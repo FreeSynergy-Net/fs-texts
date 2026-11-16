@@ -10,7 +10,7 @@ use std::time::Instant;
 
 use crate::Report;
 use crate::frontend::Frontend;
-use crate::frontend_window::{Setup, window};
+use crate::frontend_window::{Setup, window_linked};
 use crate::nav::Nav;
 use crate::source::PageMaker;
 use crate::store_path::{data_dir, origins_file};
@@ -39,7 +39,9 @@ pub fn run(args: &Args, texts: RpcTexts) -> Result<(), String> {
         origins_file(&data, &records_key(&args.sources))
     };
     let origins = FileOrigins::open(&records).map_err(|e| e.to_string())?;
-    let wiki = Arc::new(Wiki::new(Arc::new(texts), Arc::new(origins)));
+    let texts = Arc::new(texts);
+    let asks = crate::mode_link::probe_of(Arc::clone(&texts), runtime.handle().clone());
+    let wiki = Arc::new(Wiki::new(texts, Arc::new(origins)));
     // The plain start has no sources: the wiki is what the server holds, nothing is imported.
     let report = if args.sources.is_empty() {
         Report::default()
@@ -118,7 +120,7 @@ pub fn run(args: &Args, texts: RpcTexts) -> Result<(), String> {
             &args.lang.clone().unwrap_or_else(environment_language),
         );
     }
-    show(args, source, shown, settings)
+    show(args, source, shown, settings, asks)
 }
 
 /// A picture (`--snapshot`) or the window, over the finished source.
@@ -127,6 +129,7 @@ fn show(
     source: WikiSource,
     shown: Frontend,
     settings: Option<PathBuf>,
+    asks: crate::window_link::Probe,
 ) -> Result<(), String> {
     let bare = source.bare_switch();
     let source = Arc::new(source);
@@ -165,7 +168,12 @@ fn show(
         pages: Some(source_maker),
     };
     register_fonts();
-    let app = window("FreeSynergy Texts", reader, shown, setup).map_err(|e| e.to_string())?;
+    // The window watches its server: when it is gone, the window says so (socket, error) and offers "Reconnect".
+    let link = crate::server::socket_path(args.socket.as_deref())
+        .ok()
+        .map(|socket| crate::mode_link::link(args, &socket, asks));
+    let (app, _) = window_linked("FreeSynergy Texts", reader, shown, setup, link)
+        .map_err(|e| e.to_string())?;
     launch(WindowOptions::default(), app).map_err(|e| e.to_string())
 }
 

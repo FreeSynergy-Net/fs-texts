@@ -77,8 +77,38 @@ impl UiTexts {
 
     /// The words of the reader (the plain frontend, the editor, the notices): `fs-components` owns them, as above.
     pub fn reader_labels(&self) -> Labels {
-        Labels::for_locale(&self.locale)
+        let mut labels = Labels::for_locale(&self.locale);
+        // Nothing open is not "nothing to show": the person is told what to do (rule: no empty grey).
+        labels.nothing_open = self.plain("reason-empty");
+        labels
     }
+
+    /// The visible name of the program or, with a facet, of the facet (`name-facet-<facet>`; a facet without a sentence
+    /// is shown by its own name, first letter upper case). Not written into the code: the sentences are in `locales/`.
+    pub fn program_name(&self, facet: Option<&str>) -> String {
+        match facet {
+            None => self.plain("name-program"),
+            Some("wiki") => self.plain("name-facet-wiki"),
+            Some(other) => capitalised(other),
+        }
+    }
+
+    /// "<program or facet> cannot start" (the title of the window of a start that failed).
+    pub fn start_title(&self, facet: Option<&str>) -> String {
+        match facet {
+            None => self.plain("start-title"),
+            Some("wiki") => self.plain("start-title-wiki"),
+            Some(other) => self.say("start-title-facet", &[("name", &capitalised(other))]),
+        }
+    }
+}
+
+fn capitalised(word: &str) -> String {
+    let mut chars = word.chars();
+    chars
+        .next()
+        .map(|c| c.to_uppercase().chain(chars).collect())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]

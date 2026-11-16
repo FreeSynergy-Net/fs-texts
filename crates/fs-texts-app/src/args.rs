@@ -57,6 +57,8 @@ pub struct Args {
     pub edit: bool,
     /// `--read-only`: the wiki window does not edit and makes no pages, whatever else is asked.
     pub read_only: bool,
+    /// `--diagnose`: print the paths, rights, server answer, version and lease as text and end (no window).
+    pub diagnose: bool,
     /// `--help` was given.
     pub help: bool,
 }
@@ -106,6 +108,7 @@ pub fn parse(args: &[String]) -> Result<Args, String> {
             "--lang" => out.lang = Some(language(&value("--lang")?)?),
             "--nav" => out.nav = Some(PathBuf::from(value("--nav")?)),
             "--check" => out.check = true,
+            "--diagnose" => out.diagnose = true,
             "--edit" => out.edit = true,
             "--read-only" => out.read_only = true,
             "--index" => out.index = Some(PathBuf::from(value("--index")?)),
@@ -233,6 +236,7 @@ pub const HELP: &str = "fs-texts-app: the wiki in a window (the wiki window; --a
   --nav <mkdocs.yml>  with --read: the navigation that orders the pages (and the .pages files in the folders)
   --reader            open the documentation reader and editor instead (the options below belong to it)
   --facet <name>      the facet to show (the link fs-<facet> sets it); the server it starts gets it too
+  --diagnose          no window: print the paths, rights, the answer of the server, the version and the lease as text
   --check             no window: connect, read the descriptions and the pages, and say what was found
 
   --socket <path>     socket of the running fs-texts-server (default $XDG_RUNTIME_DIR/freesynergy/texts.sock);

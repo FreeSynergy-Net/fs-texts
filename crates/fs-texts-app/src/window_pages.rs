@@ -52,8 +52,17 @@ impl Switcher {
     /// Draw again (the menus are set again, which redraws everything) after the modal or the pages changed.
     pub(crate) fn redraw(self: &Arc<Self>) {
         if let Err(e) = self.install(self.shown()) {
-            eprintln!("fs-texts: the menus are not set ({e})");
+            self.menus_failed(&e);
         }
+    }
+
+    /// The menus could not be set: the person is told (the menus would otherwise stay as they were, or be missing).
+    pub(crate) fn menus_failed(&self, error: &dyn std::fmt::Display) {
+        let said = self
+            .texts()
+            .say("menus-not-set", &[("error", &error.to_string())]);
+        eprintln!("fs-texts: {said}");
+        self.problem(said);
     }
 
     pub(crate) fn close_modal(self: &Arc<Self>) {

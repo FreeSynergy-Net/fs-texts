@@ -18,9 +18,11 @@ use crate::ui_texts::UiTexts;
 use crate::window_modal::{Act, styles};
 
 /// The sentences of the body: the title, the reason, and the hint about an older window when a server is concerned.
-pub fn lines(problem: &Problem, german: bool) -> Vec<String> {
+///
+/// The title follows the program or the facet (`facet`): "Texts cannot start", or "The wiki cannot start" for `--facet wiki`.
+pub fn lines(problem: &Problem, german: bool, facet: Option<&str>) -> Vec<String> {
     let t = UiTexts::new(german);
-    let mut lines = vec![t.plain("start-title"), problem.say(&t)];
+    let mut lines = vec![t.start_title(facet), problem.say(&t)];
     if matches!(problem, Problem::Server { .. }) {
         lines.push(t.plain("start-close-old"));
     }
@@ -67,8 +69,13 @@ impl Surface for ProblemSurface {
 ///
 /// # Errors
 /// The shell cannot be built.
-pub fn build(problem: &Problem, german: bool, retry: Act) -> Result<AppWidget, AppError> {
-    let lines = lines(problem, german);
+pub fn build(
+    problem: &Problem,
+    german: bool,
+    facet: Option<&str>,
+    retry: Act,
+) -> Result<AppWidget, AppError> {
+    let lines = lines(problem, german, facet);
     let surface = Arc::new(ProblemSurface {
         lines: lines.clone(),
         retry_word: UiTexts::new(german).plain("start-retry"),
@@ -87,7 +94,12 @@ pub fn build(problem: &Problem, german: bool, retry: Act) -> Result<AppWidget, A
 ///
 /// # Errors
 /// The window cannot be opened (the reason is already said on stderr).
-pub fn show(problem: &Problem, german: bool, words: &[String]) -> Result<(), String> {
+pub fn show(
+    problem: &Problem,
+    german: bool,
+    facet: Option<&str>,
+    words: &[String],
+) -> Result<(), String> {
     let words = words.to_vec();
     let slot: Arc<std::sync::OnceLock<AppWidget>> = Arc::default();
     let again = Arc::clone(&slot);
@@ -102,7 +114,7 @@ pub fn show(problem: &Problem, german: bool, words: &[String]) -> Result<(), Str
             app.quit();
         }
     });
-    let app = build(problem, german, retry).map_err(|e| e.to_string())?;
+    let app = build(problem, german, facet, retry).map_err(|e| e.to_string())?;
     let _ = slot.set(app.clone());
     launch(WindowOptions::default(), app).map_err(|e| e.to_string())
 }
