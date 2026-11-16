@@ -272,7 +272,7 @@ Start (needs a graphical session). The wiki lives in the server, so **start the 
 
 ```
 cp -r /srv/FreeSynergy/fs-documentation/docs/en /tmp/fs-docs-copy
-cd /srv/FreeSynergy/fs-wiki
+cd /srv/FreeSynergy/fs-texts
 cargo run --release -p fs-texts-server -- --socket /tmp/fs-texts.sock --data /tmp/fs-texts-data      # terminal 1
 cargo run --release -p fs-texts-app -- --reader --socket /tmp/fs-texts.sock --docs /tmp/fs-docs-copy --export /tmp/fs-docs-copy   # terminal 2
 ```
