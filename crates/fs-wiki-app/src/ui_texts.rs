@@ -2,11 +2,12 @@
 //! and of the reader, and those of the Admin window.
 //!
 //! Pattern: Factory over embedded `texts/en.mf2` and `texts/de.mf2` — one `UiTexts` per interface language; a sentence is
-//! whole with named holes (`{$path}`), never built from pieces. `check_pairs(TEXTS)` must be empty (a test asserts it), so
-//! no id exists in one language only. The words the older tables (`lang_words.rs`, `words.rs`) hold are to follow.
+//! whole with named holes (`{$path}`), never built from pieces; a word that depends on a number or a code is chosen by a
+//! selector (`.match`), never by code. `check_pairs(TEXTS)` must be empty (a test asserts it), so no id exists in one
+//! language only. The words of the layouts and of the reader are not kept here: they are those of `fs-components`.
+//! The words of `words.rs` (English, for the console) are still to follow.
 
 use fs_components_mf2::{Mf2Texts, Source};
-use fs_components_widgets::{SlashLabels, TitleLabels};
 use fs_components_words::{Args, Locale, Localized, TextId, Words};
 use fs_components_workbenches::{Labels, WikiLabels};
 
@@ -68,107 +69,15 @@ impl UiTexts {
         self.texts.say(&TextId::new(id), &args).text().to_owned()
     }
 
-    /// How many pages there are, said for `n` (`0 pages`, `1 page`, `2 pages`; German `Seite` and `Seiten`).
-    pub fn pages_said(&self, n: u64) -> String {
-        let args = Args::new().count("n", n).text("hole", n.to_string());
-        self.texts
-            .say(&TextId::new("wk-page-count"), &args)
-            .text()
-            .to_owned()
-    }
-
-    /// The page count for every number but one, with the two characters `{}` for the number (`{} pages`).
-    fn page_count_other(&self) -> String {
-        let args = Args::new().count("n", 2).text("hole", "{}");
-        self.texts
-            .say(&TextId::new("wk-page-count"), &args)
-            .text()
-            .to_owned()
-    }
-
-    /// The page count for exactly one page, with `{}` for the number (`{} page`): `WikiLabels::page_count_one`.
-    pub fn page_count_one(&self) -> String {
-        let args = Args::new().count("n", 1).text("hole", "{}");
-        self.texts
-            .say(&TextId::new("wk-page-count"), &args)
-            .text()
-            .to_owned()
-    }
-
-    /// The sentence `id` with the two characters `{}` in the place of its one hole: the form `fs-components` fills itself.
-    fn holey(&self, id: &str) -> String {
-        self.say(id, &[("hole", "{}")])
-    }
-
-    /// The words of the wiki layouts.
+    /// The words of the wiki layouts: `fs-components` owns them (one place for every program, MF2 in both languages, the page
+    /// count with its plural selector), so the wiki does not keep a copy.
     pub fn wiki_labels(&self) -> WikiLabels {
-        let mut w = WikiLabels::default();
-        w.program = self.plain("wk-program");
-        w.pages = self.plain("wk-pages");
-        w.filter = self.plain("wk-filter");
-        w.outline = self.plain("wk-outline");
-        w.no_headings = self.plain("wk-no-headings");
-        w.history = self.plain("wk-history");
-        w.no_history = self.plain("wk-no-history");
-        w.state_current = self.plain("wk-state-current");
-        w.state_outdated = self.plain("wk-state-outdated");
-        w.state_fallback = self.plain("wk-state-fallback");
-        w.language = self.plain("wk-language");
-        w.edit = self.plain("wk-edit");
-        w.share = self.plain("wk-share");
-        w.block_hint = self.plain("wk-block-hint");
-        w.title_hint = TitleLabels::for_locale(&self.locale).placeholder;
-        w.page_count = self.page_count_other();
-        w.page_count_one = self.page_count_one();
-        w.slash = SlashLabels::for_locale(&self.locale);
-        w
+        WikiLabels::for_locale(&self.locale)
     }
 
-    /// The words of the reader (the plain frontend, the editor, the notices).
+    /// The words of the reader (the plain frontend, the editor, the notices): `fs-components` owns them, as above.
     pub fn reader_labels(&self) -> Labels {
-        let mut l = Labels::default();
-        l.tasks_locked = self.plain("rd-tasks-locked");
-        for (field, id) in [
-            (&mut l.search, "rd-search"),
-            (&mut l.back, "rd-back"),
-            (&mut l.edit, "rd-edit"),
-            (&mut l.save, "rd-save"),
-            (&mut l.cancel, "rd-cancel"),
-            (&mut l.export, "rd-export"),
-            (&mut l.nothing_open, "rd-nothing-open"),
-            (&mut l.saved, "rd-saved"),
-            (&mut l.no_changes, "rd-no-changes"),
-            (&mut l.unsaved, "rd-unsaved"),
-            (&mut l.discard_confirm, "rd-discard-confirm"),
-            (&mut l.backup_found, "rd-backup-found"),
-            (&mut l.restore, "rd-restore"),
-            (&mut l.discard, "rd-discard"),
-            (&mut l.backup_stale, "rd-backup-stale"),
-            (&mut l.restore_confirm, "rd-restore-confirm"),
-        ] {
-            *field = self.plain(id);
-        }
-        for (field, id) in [
-            (&mut l.nothing_found, "rd-nothing-found"),
-            (&mut l.unreadable, "rd-unreadable"),
-            (&mut l.missing_target, "rd-missing-target"),
-            (&mut l.not_saved, "rd-not-saved"),
-            (&mut l.cannot_edit, "rd-cannot-edit"),
-            (&mut l.not_exported, "rd-not-exported"),
-            (&mut l.overwrite_confirm, "rd-overwrite-confirm"),
-            (&mut l.lossy, "rd-lossy"),
-            (&mut l.conflict_confirm, "rd-conflict-confirm"),
-            (&mut l.backup_mismatch, "rd-backup-mismatch"),
-            (&mut l.backup_failed, "rd-backup-failed"),
-            (&mut l.glyphs_missing, "rd-glyphs-missing"),
-            (&mut l.glyphs_titles, "rd-glyphs-titles"),
-            (&mut l.glyphs_more, "rd-glyphs-more"),
-            (&mut l.list_failed, "rd-list-failed"),
-            (&mut l.search_failed, "rd-search-failed"),
-        ] {
-            *field = self.holey(id);
-        }
-        l
+        Labels::for_locale(&self.locale)
     }
 }
 
@@ -185,7 +94,10 @@ mod tests {
     #[test]
     fn count_texts_say_one_and_many_in_both_languages() {
         let (de, en) = (UiTexts::new(true), UiTexts::new(false));
-        let said = |t: &UiTexts| (t.pages_said(0), t.pages_said(1), t.pages_said(2));
+        let said = |t: &UiTexts| {
+            let w = t.wiki_labels();
+            (w.pages_said(0), w.pages_said(1), w.pages_said(2))
+        };
         assert_eq!(
             said(&de),
             ("0 Seiten".into(), "1 Seite".into(), "2 Seiten".into())
@@ -193,10 +105,6 @@ mod tests {
         assert_eq!(
             said(&en),
             ("0 pages".into(), "1 page".into(), "2 pages".into())
-        );
-        assert_eq!(
-            (de.page_count_one().as_str(), en.page_count_one().as_str()),
-            ("{} Seite", "{} page")
         );
         // The delete question counts the page and its subpages.
         let sub = |t: &UiTexts, n| t.say_count("dlg-delete-body-sub", n, &[]);
@@ -214,25 +122,18 @@ mod tests {
         assert!(sub(&en, 1).contains("(1 page in all)"), "{}", sub(&en, 1));
     }
 
-    /// The wiki keeps its own words (they are its texts), but they must say what fs-components says for the same language:
-    /// a difference is a drift between the two sets of files and shows here.
+    /// One place for the words: the wiki's own files hold no id of the layouts (`wk-`) or of the reader (`rd-`), whose words
+    /// `fs-components` owns. A copy in `texts/` would drift from it at every lift.
     #[test]
-    fn the_wiki_words_equal_those_of_fs_components() {
-        for german in [false, true] {
-            let (ui, locale) = (
-                UiTexts::new(german),
-                Locale::parse(if german { "de" } else { "en" }).unwrap(),
-            );
-            assert_eq!(
-                ui.wiki_labels(),
-                WikiLabels::for_locale(&locale),
-                "wiki layout words, german {german}"
-            );
-            assert_eq!(
-                ui.reader_labels(),
-                Labels::for_locale(&locale),
-                "reader words, german {german}"
-            );
+    fn the_words_of_the_components_are_not_copied_into_the_wiki_files() {
+        for source in TEXTS {
+            for line in source.text.lines() {
+                assert!(
+                    !line.starts_with("wk-") && !line.starts_with("rd-"),
+                    "{}: {line}",
+                    source.language
+                );
+            }
         }
     }
 
@@ -264,8 +165,8 @@ mod tests {
             "page-new",
             "dlg-keep",
             "err-empty",
-            "wk-title-hint",
             "admin-type-trash",
+            "lang-label",
         ];
         for id in ids {
             for ui in [&de, &UiTexts::new(false)] {
