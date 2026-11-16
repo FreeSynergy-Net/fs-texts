@@ -1763,6 +1763,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-text-site"
+version = "0.0.12"
+dependencies = [
+ "fs-text",
+ "fs-text-html",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
 name = "fs-types"
 version = "0.0.1"
 source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.19#90e62c30ad3af06beaa4edabce14e1448fdce9f3"

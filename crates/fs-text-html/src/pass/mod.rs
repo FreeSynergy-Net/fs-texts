@@ -14,6 +14,6 @@ mod path;
 
 pub use collect::PassSet;
 pub use error::PassError;
-pub use fsx::{copy_file, Copied, Limits};
+pub use fsx::{copy_file, copy_from, measure, open_plain, Copied, Limits};
 pub use media::{MediaType, Prober};
 pub use path::PassPath;

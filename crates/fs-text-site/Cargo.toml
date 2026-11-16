@@ -1,0 +1,21 @@
+[package]
+name = "fs-text-site"
+description = "FreeSynergy site builder: a folder of text and user files in, a static website folder out (several sites per domain, byte-exact pass-through, deterministic)"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "fs-text-site"
+path = "src/main.rs"
+
+[dependencies]
+fs-text = { path = "../fs-text" }
+fs-text-html = { path = "../fs-text-html" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+toml = "0.8"
+
+[dev-dependencies]
+tempfile = "3"

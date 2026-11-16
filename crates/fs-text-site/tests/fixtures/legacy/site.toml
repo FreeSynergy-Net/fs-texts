@@ -1,0 +1,9 @@
+schema = 1
+purpose = "website"
+
+[names]
+primary = "legacy.example.test"
+aliases = ["www.legacy.example.test"]
+
+[acme]
+method = "http-01"

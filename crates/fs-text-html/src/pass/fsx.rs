@@ -45,19 +45,38 @@ pub fn copy_file(
     dest: &Path,
     limits: Limits,
 ) -> Result<Copied, PassError> {
-    let media = MediaType::from_extension(&rel.extension().unwrap_or_default())?;
     let mut src = open_plain(root, rel)?;
+    copy_from(&mut src, rel, dest, limits)
+}
+
+/// Copy the bytes of `src` to `dest/rel`, after the media and content checks. For a source that
+/// was opened by [`open_plain`] (or a store that checked its own file); the output is created
+/// new and removed again on a refusal.
+pub fn copy_from(
+    src: &mut impl Read,
+    rel: &PassPath,
+    dest: &Path,
+    limits: Limits,
+) -> Result<Copied, PassError> {
+    let media = MediaType::from_extension(&rel.extension().unwrap_or_default())?;
     let to = dest.join(rel.as_str());
     if let Some(parent) = to.parent() {
         fs::create_dir_all(parent)?;
     }
     let mut out = OpenOptions::new().write(true).create_new(true).open(&to)?;
-    let r = stream(&mut src, &mut out, media, limits);
+    let r = stream(src, &mut out, media, limits);
     if r.is_err() {
         drop(out);
         let _ = fs::remove_file(&to);
     }
     r
+}
+
+/// Read `src` through the same checks as [`copy_from`] and write nothing: size, SHA-256 and
+/// media type (the site builder names media files by their hash before it copies them).
+pub fn measure(src: &mut impl Read, rel: &PassPath, limits: Limits) -> Result<Copied, PassError> {
+    let media = MediaType::from_extension(&rel.extension().unwrap_or_default())?;
+    stream(src, &mut std::io::sink(), media, limits)
 }
 
 fn stream(
@@ -93,7 +112,9 @@ fn stream(
 }
 
 #[cfg(unix)]
-fn open_plain(root: &Path, rel: &PassPath) -> Result<File, PassError> {
+/// Open `root/rel` for reading if it is a plain file reached without a link on the way and with
+/// one name only.
+pub fn open_plain(root: &Path, rel: &PassPath) -> Result<File, PassError> {
     use std::os::unix::fs::MetadataExt;
     let mut p = root.to_path_buf();
     let n = rel.segments().count();
@@ -123,6 +144,7 @@ fn open_plain(root: &Path, rel: &PassPath) -> Result<File, PassError> {
 }
 
 #[cfg(not(unix))]
-fn open_plain(_: &Path, _: &PassPath) -> Result<File, PassError> {
+/// Only supported on Unix.
+pub fn open_plain(_: &Path, _: &PassPath) -> Result<File, PassError> {
     Err(PassError::NotRegular("only supported on Unix"))
 }
