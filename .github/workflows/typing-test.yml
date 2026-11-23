@@ -33,12 +33,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends pkg-config libxkbcommon-dev libwayland-dev libfontconfig1-dev libssl-dev
-      - uses: FreeSynergy-Net/fs-release/actions/setup-rust@15935ed0d847d522fcb43d93e340ad1b14809639
+      - uses: FreeSynergy-Net/fs-release/actions/setup-rust@485f74732ddb90965fafcfa37b6a4f6b473dcc6b
         with:
           cache-key: typing-test
       - name: Build the window (debug, with the read-only text access of the test; the feature is refused in a release build)
         run: cargo build --locked -p fs-texts-bin --features test-access
-      - uses: FreeSynergy-Net/fs-release/actions/typing-test@15935ed0d847d522fcb43d93e340ad1b14809639
+      - uses: FreeSynergy-Net/fs-release/actions/typing-test@485f74732ddb90965fafcfa37b6a4f6b473dcc6b
         with:
           app-binary: target/debug/fs-texts
           app-args: "--admin --size 1000x640"
