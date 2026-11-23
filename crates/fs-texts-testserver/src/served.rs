@@ -25,6 +25,8 @@ pub struct Served {
     stop: Option<oneshot::Sender<()>>,
     thread: Option<std::thread::JoinHandle<()>>,
     _dir: tempfile::TempDir,
+    /// The folder of the socket of the (absent) hub; removed with this value.
+    _hub_dir: Option<tempfile::TempDir>,
 }
 
 impl Served {
@@ -53,10 +55,13 @@ impl Served {
         // The port is the real one, pointed at a socket in it, where nobody listens: the tests never reach a hub,
         // so `purge` answers "no hub" and the report offers the same ids as the real server.
         // A private folder of our own (a fixed name in the shared temp folder could be bound by another user).
-        let none = tempfile::tempdir().unwrap().keep().join("no-hub.sock");
+        let hub_dir = tempfile::tempdir().unwrap();
+        let none = hub_dir.path().join("no-hub.sock");
         let port = fs_texts_server::HubPurge::new(store.clone(), Some(none));
         let repo = Arc::new(WikiRepo::new(store, ACTOR).with_log_purge(Arc::new(port)));
-        Self::serving(repo.clone(), repo)
+        let mut served = Self::serving(repo.clone(), repo);
+        served._hub_dir = Some(hub_dir);
+        served
     }
 
     /// A server whose `Texts` is `texts` and whose feed is that of `repo`.
@@ -95,6 +100,7 @@ impl Served {
             stop: Some(stop),
             thread: Some(thread),
             _dir: dir,
+            _hub_dir: None,
         }
     }
 
@@ -112,5 +118,22 @@ impl Served {
 impl Drop for Served {
     fn drop(&mut self) {
         self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Served;
+
+    /// Red before: the folder of the socket of the absent hub was kept (`keep()`) and stayed behind.
+    #[tokio::test]
+    async fn the_folders_of_a_server_go_with_it() {
+        let served = Served::in_memory().await;
+        let socket_dir = served.socket.parent().unwrap().to_owned();
+        let hub_dir = served._hub_dir.as_ref().unwrap().path().to_owned();
+        assert!(socket_dir.exists() && hub_dir.exists());
+        drop(served);
+        assert!(!socket_dir.exists(), "{} was left", socket_dir.display());
+        assert!(!hub_dir.exists(), "{} was left", hub_dir.display());
     }
 }
