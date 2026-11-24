@@ -26,7 +26,8 @@ pub struct Served {
     thread: Option<std::thread::JoinHandle<()>>,
     _dir: tempfile::TempDir,
     /// The folder of the socket of the (absent) hub; removed with this value.
-    _hub_dir: Option<tempfile::TempDir>,
+    #[cfg_attr(not(test), allow(dead_code))] // only held, so that the drop removes it; the test reads it
+    hub_dir: Option<tempfile::TempDir>,
 }
 
 impl Served {
@@ -60,7 +61,7 @@ impl Served {
         let port = fs_texts_server::HubPurge::new(store.clone(), Some(none));
         let repo = Arc::new(WikiRepo::new(store, ACTOR).with_log_purge(Arc::new(port)));
         let mut served = Self::serving(repo.clone(), repo);
-        served._hub_dir = Some(hub_dir);
+        served.hub_dir = Some(hub_dir);
         served
     }
 
@@ -100,7 +101,7 @@ impl Served {
             stop: Some(stop),
             thread: Some(thread),
             _dir: dir,
-            _hub_dir: None,
+            hub_dir: None,
         }
     }
 
@@ -130,7 +131,7 @@ mod tests {
     async fn the_folders_of_a_server_go_with_it() {
         let served = Served::in_memory().await;
         let socket_dir = served.socket.parent().unwrap().to_owned();
-        let hub_dir = served._hub_dir.as_ref().unwrap().path().to_owned();
+        let hub_dir = served.hub_dir.as_ref().unwrap().path().to_owned();
         assert!(socket_dir.exists() && hub_dir.exists());
         drop(served);
         assert!(!socket_dir.exists(), "{} was left", socket_dir.display());
