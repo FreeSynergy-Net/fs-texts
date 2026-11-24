@@ -35,6 +35,7 @@ fn nothing_listening_is_an_error_that_names_the_socket_and_how_to_start_the_serv
 
 #[test]
 fn the_binary_starts_the_server_of_its_version_on_a_given_socket_and_it_ends_with_the_window() {
+    ensure_server_binary();
     let dir = temp_dir("sv-bin");
     let socket = dir.join("own.sock");
     // `--check`: no window, but the same way to the server (handshake, start). The data goes to the temp folder.
@@ -58,4 +59,30 @@ fn the_binary_starts_the_server_of_its_version_on_a_given_socket_and_it_ends_wit
     }
     assert!(!socket.exists(), "the server it started did not end");
     std::fs::remove_dir_all(dir).unwrap();
+}
+
+/// The window starts the `fs-texts-server` next to it. A run that is narrowed to the crates it changed (the check gate:
+/// app, bin, client, testserver) does not build the server, which is no dependant of those: build it here when it is missing.
+fn ensure_server_binary() {
+    let server = Path::new(env!("CARGO_BIN_EXE_fs-texts-app"))
+        .with_file_name(format!("fs-texts-server{}", std::env::consts::EXE_SUFFIX));
+    if server.exists() {
+        return;
+    }
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let built = Command::new(cargo)
+        .args([
+            "build",
+            "--locked",
+            "--all-features",
+            "-p",
+            "fs-texts-server",
+        ])
+        .status()
+        .unwrap();
+    assert!(
+        built.success() && server.exists(),
+        "no {}",
+        server.display()
+    );
 }
