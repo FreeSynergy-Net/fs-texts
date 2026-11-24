@@ -26,7 +26,8 @@ pub struct Served {
     thread: Option<std::thread::JoinHandle<()>>,
     _dir: tempfile::TempDir,
     /// The folder of the socket of the (absent) hub; removed with this value.
-    #[cfg_attr(not(test), allow(dead_code))] // only held, so that the drop removes it; the test reads it
+    #[cfg_attr(not(test), allow(dead_code))]
+    // only held, so that the drop removes it; the test reads it
     hub_dir: Option<tempfile::TempDir>,
 }
 
